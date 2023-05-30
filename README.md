@@ -9,5 +9,6 @@ Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/pa
  # if needed: install.packages('remotes') 
 remotes::install_github("davemcg/exPlotR")
 library(exPlotR)
+load('your_rse_object.Rdata')
 exPlotR(your_rse_object)
 ```
