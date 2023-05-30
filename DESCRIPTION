@@ -1,0 +1,22 @@
+Package: exPlotR
+Title: Lightweight Gene Expression Viewer of SummarizedExperiment 
+Version: 0.0.1
+Authors@R: 
+    person(given = "David",
+           family = "McGaughey",
+           role = c("aut", "cre"),
+           email = "david.mcgaughey@nih.gov")
+Description: Lightweight Gene Expression Viewer of SummarizedExperiment object
+License: LICENSE
+LazyData: true
+biocViews:
+  SummarizedExperiment
+Imports:
+  dplyr,
+  ggplot2,
+  tidyr,
+  shiny,
+  tibble
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
