@@ -12,6 +12,7 @@ LazyData: true
 biocViews:
   SummarizedExperiment
 Imports:
+  bslib,
   dplyr,
   ggplot2,
   tidyr,
