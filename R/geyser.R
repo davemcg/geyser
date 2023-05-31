@@ -24,7 +24,7 @@
 #' }
 #'
 
-geyser <- function(rse, name = "geyser", ...) {
+geyser <- function(rse, app_name = "geyser", ...) {
   file_path <- system.file("app/myapp.R", package = "geyser")
   #file_path <- "inst/app/myapp.R"
   if (!nzchar(file_path)) stop("Shiny app not found")
@@ -34,7 +34,7 @@ geyser <- function(rse, name = "geyser", ...) {
 
   # variables for server.R
   server_env$rse <- rse
-  server_env$name <- name
+  server_env$app_name <- app_name
 
   app <- shiny::shinyApp(ui, server)
   shiny::runApp(app, ...)
