@@ -1,10 +1,10 @@
 # geyser
 
-Gene Expression Visualizer of SummarizedExperiment in R
+## Gene Expression displaY of SummarizedExperiment in R
 
-*(the `v` is a `y` because gevser is not a word and geyser is and `v` is SO close to a `y`)*
+Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html) data structure to flexibly plot gene (or transcript) expression by user-led sample grouping(s).
 
-Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html) data structure to flexibly display gene (or transcript) expression by user-led sample grouping(s).
+Solves the problem of "uh, here is a bunch of RNAseq data and I just want to quickly look at some gene expression patterns across arbitrary sample metadata labels"
 
 ## Quick Start
 Note: only quick if you already have a SE object. See below if you want to quickly make a SE.
