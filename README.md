@@ -30,3 +30,12 @@ assay(rse_gene_SRP009615, "counts") <- transform_counts(rse_gene_SRP009615)
 rownames(rse_gene_SRP009615) <- paste0(rowData(rse_gene_SRP009615)$gene_name, ' (', row.names(rse_gene_SRP009615), ')')
 geyser(rse_gene_SRP009615, "SRP009615")
 ```
+
+## related tools
+
+The theme between these tools is that they do A LOT OF STUFF. geyser just does one thing - shows gene expression across your samples. Which, effectively, means less energy spent trying to figure out how to get started.
+
+ - [iSEE](https://bioconductor.org/packages/release/bioc/html/iSEE.html)
+   - in short, geyser is a WAAAAAY LESS POWERFUL version of iSEE
+ - [DEVis](https://cran.r-hub.io/web/packages/DEVis/vignettes/DEVis_vignette.html)
+ - [omicsViewer](https://bioconductor.org/packages/devel/bioc/vignettes/omicsViewer/inst/doc/quickStart.html#1_Introduction)
