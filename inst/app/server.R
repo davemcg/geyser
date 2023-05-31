@@ -5,7 +5,7 @@ library(ggplot2)
 library(shiny)
 library(tibble)
 
-# this argument yanked via the R/exPlotR.R function
+# this argument yanked via the R/geyser.R function
 rse_name <- deparse(substitute(rse))
 
 server <- function(input, output, session) {
@@ -24,9 +24,8 @@ server <- function(input, output, session) {
     genes <- input$genes
     groupings <- input$groupings
 
-    # grab gene counts and left_join with colData
-    pdata <- assay(get(rse_name))[genes, ,
-                             drop = FALSE] %>%
+    # pull gene counts and left_join with colData
+    pdata <- assay(get(rse_name), value = 'counts')[genes, ,drop = FALSE] %>%
       as_tibble(rownames = 'Gene') %>%
       pivot_longer(-Gene, values_to = 'counts', names_to = 'sample_unique_id') %>%
       left_join(colData(get(rse_name)) %>%
@@ -38,14 +37,21 @@ server <- function(input, output, session) {
     } else {
       pfdata <- pdata
     }
+    # optional (but set as default) log1p scaling
+    if (input$expression_scale){
+      pfdata$counts <- log1p(pfdata$counts)
+    }
     pfdata %>%
+      # make custom column with user selected groupings of columns
       unite("group", all_of(groupings), remove = FALSE, sep = " | ") %>%
-      ggplot(aes(x=group,y=log1p(counts))) +
+      ggplot(aes(x=group,y=counts)) +
       geom_boxplot() +
       geom_jitter() +
       coord_flip() +
       xlab(paste0(groupings, collapse = ' | ')) +
-      theme_bw() + facet_wrap(~Gene, ncol = 1)
+      ylab("Expression") +
+      theme_bw() +
+      facet_wrap(~Gene, ncol = 1)
   })
   output$exp_plot <- renderPlot({
     exp_plot_reactive()

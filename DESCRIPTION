@@ -1,12 +1,12 @@
-Package: exPlotR
-Title: Lightweight Gene Expression Viewer of SummarizedExperiment 
-Version: 0.0.1
+Package: geyser
+Title: Gene Expression Viz of SummerizedExperiment in R
+Version: 0.1
 Authors@R: 
     person(given = "David",
            family = "McGaughey",
            role = c("aut", "cre"),
            email = "david.mcgaughey@nih.gov")
-Description: Lightweight Gene Expression Viewer of SummarizedExperiment object
+Description: Lightweight Gene Expression Viewer of SummarizedExperiment object.
 License: LICENSE
 LazyData: true
 biocViews:
