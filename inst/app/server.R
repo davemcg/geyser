@@ -22,7 +22,7 @@ server <- function(input, output, session) {
   # select assay slot (usually counts) ----
   updateSelectizeInput(session, 'slot',
                        choices = assays(get(rse_name)) %>% names() %>% sort(),
-                       selected = names(assays(get(rse_name)))[1],
+                       selected = if ('counts' %in% names(assays(get(rse_name)))){'counts'} else {names(assays(get(rse_name)))[1]},
                        server = TRUE)
   # expression plot ----
   #source('exp_plot.R')
