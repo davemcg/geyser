@@ -8,8 +8,8 @@ ui <-  navbarPage(
                           secondary = "#3A5836",
                           font_scale = 0.8,
                           bootswatch = 'united',
-                          "bg-dark" = "black",
-                          "navbar-bg" = "#86cecb"),
+                          "dark" = "#3A5836",
+                          "nav-tabs-link-active-bg" = "red"),
   selected = "Plotting",
   collapsible = TRUE,
 
