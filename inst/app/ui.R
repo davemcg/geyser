@@ -1,6 +1,6 @@
 library(shiny)
 library(bslib)
-
+library(htmltools)
 ui <-  navbarPage(
   title = "geyser",
   theme = bslib::bs_theme(version =  5,
