@@ -38,6 +38,8 @@ hm_plot <- function(input, rse_name, slot){
   output$plot <- Heatmap(t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()]))), 
                          column_split = pfdata %>% filter(Gene == genes[1]) %>% pull(group), 
                          column_title_rot = 90,
+                         cluster_columns = input$col_clust,
+                         cluster_rows = input$row_clust,
                          name = lab_text)
   output$grouping_length <- nrow(pfdata) + (nchar(pfdata$group) %>% max()) + (nchar(pfdf) %>% max())
   output

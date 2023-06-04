@@ -43,18 +43,24 @@ ui <-  page_navbar(
         full_screen = TRUE,
         card_header("Visualization", class = 'bg-dark'),
         card_footer(
-          fluidRow(
-            selectizeInput("genes",
-                           "Gene(s): ",
-                           choices = NULL,
-                           multiple = TRUE),
-            selectizeInput("slot",
-                           "Assay Type:",
-                           choices = NULL,
-                           multiple = FALSE
-            )
+          layout_column_wrap(width = 0.5,
+                             selectizeInput("genes",
+                                            "Gene(s): ",
+                                            choices = NULL,
+                                            multiple = TRUE),
+                             selectizeInput("slot",
+                                            "Assay Type:",
+                                            choices = NULL,
+                                            multiple = FALSE
+                             )
           ),
-          checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE),
+          conditionalPanel(condition = "input.plot == 'Box Plot'",
+                           layout_column_wrap(width = 0.5, checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE))),
+          conditionalPanel(condition = "input.plot == 'Heatmap'",
+                           layout_column_wrap(width = "100px",
+                                              checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE),
+                                              checkboxInput("col_clust", label = "Cluster Columns", value = TRUE),
+                                              checkboxInput("row_clust", label = "Cluster Rows", value = TRUE))),
           actionButton('exp_plot_button','(Re)Draw Plot!')
         ),
         card_body_fill(
