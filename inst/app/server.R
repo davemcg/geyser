@@ -26,7 +26,7 @@ server <- function(input, output, session) {
                        selected = if ('counts' %in% names(assays(get(rse_name)))){'counts'} else {names(assays(get(rse_name)))[1]},
                        server = TRUE)
   # expression plot ----
-  source('exp_plot.R')
+  #source('exp_plot.R')
   exp_plot_reactive <- eventReactive(input$exp_plot_button, {
     exp_plot(input, rse_name)
   })
@@ -36,7 +36,7 @@ server <- function(input, output, session) {
                            {max(600, 20 * length(input$genes) * exp_plot_reactive()$grouping_length)})
   )
   # hm plot -----
-  source('heatmap.R')
+  #source('heatmap.R')
   hm_plot_reactive <- eventReactive(input$exp_plot_button, {
     hm_plot(input, rse_name)
   })
@@ -53,7 +53,7 @@ server <- function(input, output, session) {
       select('rse_sample_id', any_of(input$groupings)) %>%
       DT::datatable(rownames= FALSE,
                     options = list(autoWidth = TRUE,
-                                   pageLength = 25),
+                                   pageLength = 15),
                     filter = list(position = 'top', clear = FALSE)),
     server = TRUE
   )
