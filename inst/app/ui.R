@@ -1,49 +1,83 @@
 library(shiny)
 library(bslib)
-
-# Define UI for application that draws a histogram
-ui <- shinyUI(
-  navbarPage(
-    theme = bs_theme(bg = "rgb(253, 253, 253)", fg = "rgb(2,2,2)",
-                     primary = "#3A5836",
-                     secondary = "#3A5836",
-                     font_scale = 0.8,
-                     bootswatch = "united"),
-    app_name,
-    # Sidebar 
-    sidebarLayout(
-      sidebarPanel(
-        selectizeInput("groupings",
-                       "Select Grouping(s):",
-                       choices = NULL,
-                       multiple = TRUE,
-        ),
-        selectizeInput("genes",
-                       "Select Gene(s): ",
-                       choices = NULL,
-                       multiple = TRUE),
-        selectizeInput("slot",
-                       "Select Assay Type:",
-                       choices = NULL,
-                       multiple = FALSE), 
-        width = 3
+library(htmltools)
+ui <-  page_navbar(
+  title = app_name,
+  theme = bslib::bs_theme(version =  5,
+                          primary = "#3A5836",
+                          secondary = "#3A5836",
+                          font_scale = 0.8,
+                          bootswatch = 'united',
+                          "dark" = "#3A5836"),
+  selected = "Full Sample Metadata",
+  collapsible = TRUE,
+  tabPanel(
+    title = "Full Sample Metadata",
+    card(
+      full_screen = TRUE,
+      card_header("colData", class = 'bg-dark'),
+      card_body_fill(
+        DT::dataTableOutput("table_full", width = "85%",fill = FALSE)
+      )
+    )
+  ),
+  
+  tabPanel(
+    title = "Plotting",
+    fluidRow(
+      selectizeInput("groupings",
+                     "Sample Grouping(s):",
+                     choices = NULL,
+                     multiple = TRUE,
       ),
-      # Show a plot of the generated distribution
-      mainPanel(
-        tabsetPanel(
-          tabPanel("Box Plot",
-                   br(),
-                   plotOutput("exp_plot",height = '100%'),
-                   checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE),
-                   actionButton('exp_plot_button','(Re)Draw Exp Plot!')),
-          tabPanel("Sample Data Grouping(s)",
-                   br(),
-                   "(Optional) Select rows to filter the samples used in the box plot",
-                   DT::dataTableOutput("table"),
-                   actionButton('clear_colData_row_selections', 'Clear Rows')),
-          tabPanel("Sample Data Full",
-                   br(),
-                   DT::dataTableOutput("table_full")))
+      selectInput("plot",
+                  "Plot:",
+                  choices = c("Box Plot", "Heatmap"),
+                  selected = "Box Plot",
+                  multiple = FALSE,
+      )),
+    layout_column_wrap(
+      width = NULL, fill = TRUE,
+      style = css(grid_template_columns = "1.5fr 1fr"),
+      card(
+        full_screen = TRUE,
+        card_header("Visualization", class = 'bg-dark'),
+        card_footer(
+          fluidRow(
+                             selectizeInput("genes",
+                                            "Gene(s): ",
+                                            choices = NULL,
+                                            multiple = TRUE),
+                             selectizeInput("slot",
+                                            "Assay Type:",
+                                            choices = NULL,
+                                            multiple = FALSE
+                             )
+          ),
+          conditionalPanel(condition = "input.plot == 'Box Plot'",
+                           layout_column_wrap(width = 0.5, checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE))),
+          conditionalPanel(condition = "input.plot == 'Heatmap'",
+                           layout_column_wrap(width = "100px",
+                                              checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE),
+                                              checkboxInput("col_clust", label = "Cluster Columns", value = TRUE),
+                                              checkboxInput("row_clust", label = "Cluster Rows", value = TRUE))),
+          actionButton('exp_plot_button','(Re)Draw Plot!')
+        ),
+        card_body_fill(
+          conditionalPanel(condition = "input.plot == 'Box Plot'",
+                           plotOutput("exp_plot",height = '100%')
+          ),
+          conditionalPanel(condition = "input.plot == 'Heatmap'",
+                           plotOutput("hm_plot",height = '100%')
+          ))
+        
+      ),
+      card(full_screen = TRUE,
+           card_header("Grouping Table (select rows to filter plot)", class = 'bg-dark'),
+           card_body_fill(
+             DT::dataTableOutput("table",width = "85%",fill = FALSE)
+           ),
+           actionButton('clear_colData_row_selections', 'Clear Rows')
       )
     )
   )

@@ -6,16 +6,18 @@ Authors@R:
            family = "McGaughey",
            role = c("aut", "cre"),
            email = "david.mcgaughey@nih.gov")
-Description: Lightweight Gene Expression displaYer (plotter / viewer) of SummarizedExperiment object. This package provides a quick and easy that uses Shiny-based GUI to empower a user to use a SummarizedExperiment object and then view gene expression grouped from the sample metadata columns (in the `colData` slot). 
+Description: Lightweight Gene Expression displaYer (plotter / viewer) of SummarizedExperiment object. This package provides a quick and easy that uses Shiny-based GUI to empower a user to use a SummarizedExperiment object and then view gene expression grouped from the sample metadata columns (in the `colData` slot). Gene expression can either be viewed with a box plot or a heatmap. 
 License: LICENSE
 LazyData: true
 biocViews:
+  ComplexHeatmap,
   SummarizedExperiment
 Imports:
   bslib,
   dplyr,
   ggbeeswarm,
   ggplot2,
+  htmltools,
   tidyr,
   shiny,
   tibble
