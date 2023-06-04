@@ -4,6 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(shiny)
 library(tibble)
+library(ComplexHeatmap)
 
 # this argument yanked via the R/geyser.R function
 rse_name <- deparse(substitute(rse))
@@ -25,7 +26,7 @@ server <- function(input, output, session) {
                        selected = if ('counts' %in% names(assays(get(rse_name)))){'counts'} else {names(assays(get(rse_name)))[1]},
                        server = TRUE)
   # expression plot ----
-  #source('exp_plot.R')
+  source('exp_plot.R')
   exp_plot_reactive <- eventReactive(input$exp_plot_button, {
     exp_plot(input, rse_name)
   })
@@ -34,12 +35,22 @@ server <- function(input, output, session) {
     height = eventReactive(input$exp_plot_button,
                            {max(600, 20 * length(input$genes) * exp_plot_reactive()$grouping_length)})
   )
+  # hm plot -----
+  source('heatmap.R')
+  hm_plot_reactive <- eventReactive(input$exp_plot_button, {
+    hm_plot(input, rse_name)
+  })
+  output$hm_plot <- renderPlot({
+    ComplexHeatmap::draw(hm_plot_reactive()$plot)},
+    height = eventReactive(input$exp_plot_button,
+                           {max(400, 0.7 * hm_plot_reactive()$grouping_length)})
+  )
 
   # sample data table -----
   output$table <- DT::renderDataTable(
     colData(get(rse_name)) %>%
-      as_tibble() %>%
-      select(any_of(input$groupings)) %>%
+      as_tibble(rownames = 'rse_sample_id') %>%
+      select('rse_sample_id', any_of(input$groupings)) %>%
       DT::datatable(rownames= FALSE,
                     options = list(autoWidth = TRUE,
                                    pageLength = 25),
