@@ -3,8 +3,16 @@
 #' @description Run shiny app to use SummarizedExperiment object to display RNAseq data
 #'
 #' @export
-#' @importFrom shiny runApp
-#' @importFrom shiny shinyApp
+#' @import shiny
+#' @import SummarizedExperiment
+#' @import bslib
+#' @import tidyr
+#' @import dplyr
+#' @import ggplot2
+#' @import tibble
+#' @import ComplexHeatmap
+#' @import htmltools
+#' 
 #'
 #' @param rse SummarizedExperiment object
 #' @param name Title name that goes on the top left of the Shiny app
