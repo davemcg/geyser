@@ -12,10 +12,10 @@
 #' @import tibble
 #' @import ComplexHeatmap
 #' @import htmltools
-#' 
+#'
 #'
 #' @param rse SummarizedExperiment object
-#' @param name Title name that goes on the top left of the Shiny app
+#' @param app_name Title name that goes on the top left of the Shiny app
 #' @param ... More arguments for [shiny::runApp()].
 #'
 #' @details
