@@ -6,11 +6,16 @@ Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/pa
 
 Solves the problem of "uh, here is a bunch of RNAseq data and I just want to quickly look at some gene expression patterns across arbitrary sample metadata labels"
 
+## Install
+```
+# if needed: install.packages('remotes') 
+remotes::install_github("rstudio/bslib") # unnecessary soon as 0.5.0 submitted to cran
+remotes::install_github("davemcg/geyser")
+```
+
 ## Quick Start
 Note: only quick if you already have a SE object. See below if you want to quickly make a SE.
 ```
- # if needed: install.packages('remotes') 
-remotes::install_github("davemcg/geyser")
 library(geyser)
 load('your_se_object.Rdata')
 geyser(your_se_object)
