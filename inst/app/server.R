@@ -4,7 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(shiny)
 library(tibble)
-library(ComplexHeatmap)
+suppressPackageStartupMessages(library(ComplexHeatmap))
 
 # this argument yanked via the R/geyser.R function
 rse_name <- deparse(substitute(rse))
@@ -45,7 +45,7 @@ server <- function(input, output, session) {
     height = shiny::eventReactive(input$hm_plot_button,
                                   {max(400, 0.7 * hm_plot_reactive()$grouping_length)})
   )
-  
+
   # sample data table -----
   output$table <- DT::renderDataTable(
     SummarizedExperiment::colData(get(rse_name)) %>%
@@ -64,7 +64,7 @@ server <- function(input, output, session) {
   observeEvent(input$clear_colData_row_selections, {
     proxy %>% DT::selectRows(NULL)
   })
-  
+
   # sample data table full -----
   output$table_full <- DT::renderDataTable(
     SummarizedExperiment::colData(get(rse_name)) %>%
