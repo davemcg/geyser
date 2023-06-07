@@ -1,3 +1,33 @@
+#' @title hm_plot
+#'
+#' @description draws the expression heatmap
+#'
+#' @keywords internal
+#' 
+#' @import SummarizedExperiment
+#' @import tidyr
+#' @import dplyr
+#' @import tibble
+#' @import ComplexHeatmap
+#'
+#'
+#' @param input From ui.R
+#' @param rse_name Name of the rse object
+#' @param slot which slot to pull the count data from the rse assay
+#'
+#' @details
+#'
+#' Makes the box plot for the geyser Shiny app
+#'
+#' @author David McGaughey
+#'
+#' @examples
+#'
+#' \dontrun{
+#' exp_plot(input, rse_name, 'counts')
+#' }
+#'
+
 hm_plot <- function(input, rse_name, slot){
   require(ComplexHeatmap)
   genes <- input$genes

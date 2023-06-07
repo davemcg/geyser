@@ -3,6 +3,8 @@ library(bslib)
 library(htmltools)
 library(DT)
 
+# set new image path folder
+addResourcePath(prefix = 'assets', directoryPath = system.file("assets", package = "geyser"))
 
 ui <-  page_navbar(
   tags$style(HTML('table.dataTable tr.active td, table.dataTable tr.active {background-color: #3A5836 !important;}')),
@@ -93,7 +95,7 @@ ui <-  page_navbar(
     align = "right",
     nav_panel("Quick Start",
               page_fluid(
-                tags$code("# If needed: BiocManager::install(\"recount3\")"),
+                tags$code("# If needed: BiocManager::install(\"recount3\")"), br(),
                 tags$code("library(recount3)"), br(),
                 tags$code("library(geyser)"), br(),
                 tags$code("library(dplyr)"), br(),
@@ -112,25 +114,25 @@ ui <-  page_navbar(
                 tags$code("geyser::geyser(rse_SRP107937, \" geyser: SRP107937\")"), br(), br(),
                 tags$iframe(width="800",
                             height="506",
-                            src="geyser_example.mp4", frameborder="0", allow="accelerometer; autoplay; gyroscope; picture-in-picture"))
+                            src="assets/geyser_example.mp4", frameborder="0", allow="accelerometer; autoplay; gyroscope; picture-in-picture"))
     ),
     nav_panel("Overview",
               tags$h3("Start with the full metadata"),
-              img(src = 'help_01.png', width = "600px"),
+              img(src = 'assets/help_01.png', width = "600px"),
               "The idea is to figure out which columns to use for the plotting",
               tags$h3("Plotting"),
-              img(src = 'help_02.png', width = "600px"),
+              img(src = "assets/help_02.png", width = "600px"),
               "Then go to the plotting section and pick the columns (\"groupings\")",
               tags$h3("Genes"),
-              img(src = 'help_03.png', width = "600px"),
+              img(src = "assets/help_03.png", width = "600px"),
               "Now pick the genes",
               tags$h3("Plot!"),
-              img(src = 'help_04.png', width = "600px"),
+              img(src = "assets/help_04.png", width = "600px"),
               "Click the plot button to generate your plot of gene by custom grouping",
               tags$h3("Custom filtering"),
-              img(src = 'help_05.png', width = "600px"),
+              img(src = "assets/help_05.png", width = "600px"),
               "You can select rows of the table (circle) to only plot these (arrow row NOT selected). You have to click the plot button again to regenerate the new, filtered, plot. The filtering is applied to all plots.",
-              img(src = 'help_06.png', width = "200px"),
+              img(src = "assets/help_06.png", width = "200px"),
               "Click the \"Clear Rows\" button to reset your sample filtering"
     ),
     nav_item(tags$a("Code Source (external link)", href = "https://github.com/davemcg/geyser", target = "_blank"))

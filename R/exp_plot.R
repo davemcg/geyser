@@ -1,3 +1,33 @@
+#' @title exp_plot
+#'
+#' @description draws the expression box plot
+#'
+#' @keywords internal
+#'
+#' @import SummarizedExperiment
+#' @import tidyr
+#' @import dplyr
+#' @import ggplot2
+#' @import ggbeeswarm 
+#' @import tibble
+#'
+#' @param input From ui.R
+#' @param rse_name Name of the rse object
+#' @param slot which slot to pull the count data from the rse assay
+#'
+#' @details
+#'
+#' Makes the box plot for the geyser Shiny app
+#'
+#' @author David McGaughey
+#'
+#' @examples
+#'
+#' \dontrun{
+#' exp_plot(input, rse_name, 'counts')
+#' }
+#'
+
 exp_plot <- function(input, rse_name, slot){
   genes <- input$genes
   groupings <- input$groupings

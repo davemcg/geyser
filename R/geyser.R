@@ -9,6 +9,7 @@
 #' @import tidyr
 #' @import dplyr
 #' @import ggplot2
+#' @import ggbeeswarm 
 #' @import tibble
 #' @import ComplexHeatmap
 #' @import htmltools
