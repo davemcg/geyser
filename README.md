@@ -6,6 +6,8 @@ Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/pa
 
 Solves the problem of "uh, here is a bunch of RNAseq data and I just want to quickly look at some gene expression patterns across arbitrary sample metadata labels"
 
+[](https://github.com/davemcg/geyser/assets/10225430/3fe874fb-97fb-4bda-8dcf-d1d7505b3eae)
+
 ## Install
 ```
 # if needed: install.packages('remotes') 
