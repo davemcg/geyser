@@ -1,11 +1,3 @@
-library(SummarizedExperiment)
-library(tidyr)
-library(dplyr)
-library(ggplot2)
-library(shiny)
-library(tibble)
-suppressPackageStartupMessages(library(ComplexHeatmap))
-
 # this argument yanked via the R/geyser.R function
 rse_name <- deparse(substitute(rse))
 

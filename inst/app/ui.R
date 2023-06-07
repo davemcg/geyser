@@ -1,8 +1,3 @@
-library(shiny)
-library(bslib)
-library(htmltools)
-library(DT)
-
 # set new image path folder
 addResourcePath(prefix = 'assets', directoryPath = system.file("assets", package = "geyser"))
 
