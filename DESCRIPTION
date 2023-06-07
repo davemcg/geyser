@@ -1,6 +1,6 @@
 Package: geyser
 Title: Gene Expression displaYer of SummerizedExperiment in R
-Version: 0.1
+Version: 0.2
 Authors@R: 
     person(given = "David",
            family = "McGaughey",
@@ -10,17 +10,22 @@ Description: Lightweight Gene Expression displaYer (plotter / viewer) of Summari
 License: LICENSE
 LazyData: true
 biocViews:
-  ComplexHeatmap,
-  SummarizedExperiment
 Imports:
   bslib,
+  ComplexHeatmap,
+  data.table,
   dplyr,
   ggbeeswarm,
   ggplot2,
   htmltools,
   tidyr,
   shiny,
+  SummarizedExperiment,
   tibble
+Remotes:
+  git::https://github.com/rstudio/bslib.git@048502a,
+  bioc::3.17/SummarizedExperiment,
+  bioc::3.17/ComplexHeatmap
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

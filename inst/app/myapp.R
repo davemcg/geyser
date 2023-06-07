@@ -1,5 +1,5 @@
 library(shiny)
-source("heatmap.R", local = TRUE)
-source("exp_plot.R", local = TRUE)
+#source("heatmap.R", local = TRUE)
+#source("exp_plot.R", local = TRUE)
 source("ui.R", local = TRUE)
 source("server.R", local = TRUE)

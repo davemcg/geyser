@@ -4,12 +4,12 @@
 \alias{geyser}
 \title{geyser}
 \usage{
-geyser(rse, name = "geyser", ...)
+geyser(rse, app_name = "geyser", ...)
 }
 \arguments{
 \item{rse}{SummarizedExperiment object}
 
-\item{name}{Title name that goes on the top left of the Shiny app}
+\item{app_name}{Title name that goes on the top left of the Shiny app}
 
 \item{...}{More arguments for \code{\link[shiny:runApp]{shiny::runApp()}}.}
 }
