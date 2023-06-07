@@ -8,7 +8,7 @@
 #' @import tidyr
 #' @import dplyr
 #' @import ggplot2
-#' @import ggbeeswarm 
+#' @import ggbeeswarm
 #' @import tibble
 #'
 #' @param input From ui.R
@@ -31,6 +31,14 @@
 exp_plot <- function(input, rse_name, slot){
   genes <- input$genes
   groupings <- input$groupings
+
+  if (length(genes) < 1 || length(groupings) < 1){
+    showModal(modalDialog(title = "Box Plot Error",
+                          "Have you specified at least one grouping and one gene?",
+                          easyClose = T,
+                          footer = NULL))
+    stop()
+  }
 
   # pull gene counts and left_join with colData
   pdata <- assay(get(rse_name),  input$slot)[genes, ,drop = FALSE] %>%

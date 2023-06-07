@@ -3,7 +3,7 @@
 #' @description draws the expression heatmap
 #'
 #' @keywords internal
-#' 
+#'
 #' @import SummarizedExperiment
 #' @import tidyr
 #' @import dplyr
@@ -32,7 +32,15 @@ hm_plot <- function(input, rse_name, slot){
   require(ComplexHeatmap)
   genes <- input$genes
   groupings <- input$groupings
-  
+
+  if (length(genes) < 1 || length(groupings) < 1){
+    showModal(modalDialog(title = "Heatmap Error",
+                          "Have you specified at least one grouping and one gene?",
+                          easyClose = T,
+                          footer = NULL))
+    stop()
+  }
+
   # pull gene counts and left_join with colData
   pdata <- assay(get(rse_name),  input$slot)[genes, ,drop = FALSE] %>%
     as_tibble(rownames = 'Gene') %>%
@@ -58,15 +66,21 @@ hm_plot <- function(input, rse_name, slot){
     # make custom column with user selected groupings of columns
     unite("group", all_of(groupings), remove = FALSE, sep = " | ")
   # make df for ComplexHeatmap
-  pfdf <- pfdata %>% 
-    dplyr::select(Gene, sample_unique_id, counts) %>% 
-    pivot_wider(names_from = sample_unique_id, values_from = counts) %>% 
-    data.frame()
+  pfdf <- pfdata %>%
+    dplyr::select(Gene, sample_unique_id, counts) %>%
+    pivot_wider(names_from = sample_unique_id, values_from = counts) %>%
+    # convert to data.table to keep special characters in column names
+    # and be able to set row names
+    data.table::data.table()
   row.names(pfdf) <- pfdf$Gene
   pfdf <- pfdf[,-1]
-  
-  output$plot <- Heatmap(t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()]))), 
-                         column_split = pfdata %>% filter(Gene == genes[1]) %>% pull(group), 
+  hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique(), with = FALSE])))
+  # row clustering fails if there are zero count rows
+  if (min(rowSums(hm_data)) == 0){
+    input$row_clust <- FALSE
+  }
+  output$plot <- Heatmap(hm_data,
+                         column_split = pfdata %>% filter(Gene == genes[1]) %>% pull(group),
                          column_title_rot = 90,
                          cluster_columns = input$col_clust,
                          cluster_rows = input$row_clust,
