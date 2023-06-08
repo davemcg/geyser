@@ -43,6 +43,15 @@ colData(rse_SRP107937)$disease <- colData(rse_SRP107937)$sra.sample_title %>% st
 geyser::geyser(rse_SRP107937, " geyser: SRP107937")
 ```
 
+## R Pseudocode to turn your count matrix and metadata into a SE object
+```
+# YOUR METADATA ROWS NEED TO MATCH YOUR COUNT MATRIX COLUMNS
+# your_count_matrix is an actual matrix (not a tibble!) with the row.names set to the gene
+library(SummarizedExperiment)
+rse <- SummarizedExperiment(assays = list(counts = your_count_matrix), colData = your_metadata)
+colnames(rse) <- your_metadata$sample_id
+```
+
 ## Related tools
 
 The theme between these tools is that they do A LOT OF STUFF. **geyser** just does one thing - shows gene expression across your samples. Which, effectively, means less energy spent trying to figure out how to get started.
