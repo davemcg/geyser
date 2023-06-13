@@ -68,13 +68,12 @@ hm_plot <- function(input, rse_name, slot){
   # make df for ComplexHeatmap
   pfdf <- pfdata %>%
     dplyr::select(Gene, sample_unique_id, counts) %>%
-    pivot_wider(names_from = sample_unique_id, values_from = counts) %>%
-    # convert to data.table to keep special characters in column names
-    # and be able to set row names
-    data.table::data.table()
+    pivot_wider(names_from = sample_unique_id, values_from = counts) 
+  col_labels <- colnames(pfdf)[-1] # yank out col names before data.frame conversion to preserve special characters
+  pfdf <- data.frame(pfdf)
   row.names(pfdf) <- pfdf$Gene
   pfdf <- pfdf[,-1]
-  hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique(), with = FALSE])))
+  hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()])))
   # row clustering fails if there are zero count rows
   if (min(rowSums(hm_data)) == 0){
     input$row_clust <- FALSE
@@ -82,6 +81,7 @@ hm_plot <- function(input, rse_name, slot){
   output$plot <- Heatmap(hm_data,
                          column_split = pfdata %>% filter(Gene == genes[1]) %>% pull(group),
                          column_title_rot = 90,
+                         column_labels = col_labels,
                          cluster_columns = input$col_clust,
                          cluster_rows = input$row_clust,
                          name = lab_text)
