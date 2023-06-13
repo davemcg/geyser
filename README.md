@@ -16,11 +16,11 @@ remotes::install_github("davemcg/geyser")
 ```
 
 ## Quick Start
-Note: only quick if you already have a SE object. See below if you want to quickly make a SE.
+Note: Use tiny SE object just to confirm the app functions for you
 ```
 library(geyser)
-load('your_se_object.Rdata')
-geyser(your_se_object)
+load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
+geyser(tiny_rse,'Test RSE')
 ```
 
 ## Use [recount3](https://www.bioconductor.org/packages/devel/bioc/vignettes/recount3/inst/doc/recount3-quickstart.html) to make a SE object

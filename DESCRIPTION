@@ -1,6 +1,6 @@
 Package: geyser
 Title: Gene Expression displaYer of SummerizedExperiment in R
-Version: 0.21
+Version: 0.22
 Authors@R: 
     person(given = "David",
            family = "McGaughey",
