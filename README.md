@@ -4,7 +4,7 @@
 
 Shiny-based app that uses the [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html) data structure to flexibly plot gene (or transcript) expression by user-led sample grouping(s).
 
-Solves the problem of "uh, here is a bunch of RNAseq data and I just want to quickly look at some gene expression patterns across arbitrary sample metadata labels"
+Solves the problem of  "uh, here is a bunch of RNAseq data and I just want to quickly look at some gene expression patterns across arbitrary sample metadata labels without writing code"
 
 [](https://github.com/davemcg/geyser/assets/10225430/3fe874fb-97fb-4bda-8dcf-d1d7505b3eae)
 
@@ -41,6 +41,15 @@ rownames(rse_SRP107937) <- paste0(rowData(rse_SRP107937)$gene_name, ' (', row.na
 colData(rse_SRP107937)$tissue <- colData(rse_SRP107937)$sra.sample_title %>% stringr::str_extract(.,'PRC|PR')
 colData(rse_SRP107937)$disease <- colData(rse_SRP107937)$sra.sample_title %>% stringr::str_extract(.,'AMD|Normal')
 geyser::geyser(rse_SRP107937, " geyser: SRP107937")
+```
+
+## R Pseudocode to turn your count matrix and metadata into a SE object
+```
+# YOUR METADATA ROWS NEED TO MATCH YOUR COUNT MATRIX COLUMNS
+# your_count_matrix is an actual matrix (not a tibble!) with the row.names set to the gene
+library(SummarizedExperiment)
+rse <- SummarizedExperiment(assays = list(counts = your_count_matrix), colData = your_metadata)
+colnames(rse) <- your_metadata$sample_id
 ```
 
 ## Related tools

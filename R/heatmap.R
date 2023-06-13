@@ -29,7 +29,6 @@
 #'
 
 hm_plot <- function(input, rse_name, slot){
-  require(ComplexHeatmap)
   genes <- input$genes
   groupings <- input$groupings
 
