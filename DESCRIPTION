@@ -1,6 +1,6 @@
 Package: geyser
 Title: Gene Expression displaYer of SummerizedExperiment in R
-Version: 0.2
+Version: 0.21
 Authors@R: 
     person(given = "David",
            family = "McGaughey",
@@ -11,9 +11,8 @@ License: LICENSE
 LazyData: true
 biocViews:
 Imports:
-  bslib,
+  bslib (>= 0.5.0),
   ComplexHeatmap,
-  data.table,
   dplyr,
   ggbeeswarm,
   ggplot2,
@@ -23,7 +22,6 @@ Imports:
   SummarizedExperiment,
   tibble
 Remotes:
-  git::https://github.com/rstudio/bslib.git@048502a,
   bioc::3.17/SummarizedExperiment,
   bioc::3.17/ComplexHeatmap
 Encoding: UTF-8
