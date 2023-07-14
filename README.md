@@ -11,12 +11,11 @@ Solves the problem of  "uh, here is a bunch of RNAseq data and I just want to qu
 ## Install
 ```
 # if needed: install.packages('remotes') 
-remotes::install_github("rstudio/bslib") # unnecessary soon as 0.5.0 submitted to cran
 remotes::install_github("davemcg/geyser")
 ```
 
 ## Quick Start
-Note: Use tiny SE object just to confirm the app functions for you
+Note: Use tiny included SE object just to confirm the app functions for you
 ```
 library(geyser)
 load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
