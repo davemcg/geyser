@@ -11,7 +11,15 @@
 #' @import SummarizedExperiment
 #' @importFrom magrittr "%>%"
 #' @importFrom tibble rownames_to_column
-#' @import shiny
+#' @importFrom shiny NS actionButton br checkboxInput column conditionalPanel
+#' @importFrom shiny downloadButton downloadHandler em eventReactive fluidRow
+#' @importFrom shiny h4 h5 hr HTML icon isolate moduleServer need
+#' @importFrom shiny numericInput
+#' @importFrom shiny observeEvent p plotOutput
+#' @importFrom shiny reactive reactiveVal renderPlot renderText req
+#' @importFrom shiny selectInput tagList tags updateSelectInput
+#' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
+#' @importFrom shiny nearPoints reactiveValues callModule
 #' 
 #' @param rse SummarizedExperiment object
 #' @param app_name Title name that goes on the top left of the Shiny app

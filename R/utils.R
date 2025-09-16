@@ -2,7 +2,8 @@
 #' Define Core Plotting Theme
 #'
 #' Creates a consistent ggplot theme for all plots to reduce code duplication.
-#' @importFrom dplyr group_by summarise n arrange desc
+#' @importFrom cowplot theme_cowplot
+#' @importFrom ggplot2 theme element_blank element_text unit element_rect
 #' @return A list of ggplot theme elements.
 #' 
 get_core_plot_theme <- function() {
@@ -33,7 +34,10 @@ get_core_plot_theme <- function() {
 #'   calculated relative to the count of the first grouping variable.
 #' @param threshold A numeric value (0-1). Rows with a `Ratio` below this
 #'   value will be filtered out. Set to `NULL` to disable.
+#' @importFrom rlang ensyms
+#' @importFrom dplyr group_by summarise n left_join mutate arrange desc filter
 #' @return A summarized and arranged tibble.
+
 summarize_grouped_data <- function(data, ..., threshold = 0.01) {
   Sum <- Ratio <- Count <- NULL
   groupings <- ensyms(...)

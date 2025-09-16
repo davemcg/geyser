@@ -3,6 +3,8 @@
 #' UI for Expression Plot Controls
 #' @description Creates the UI for the expression plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList h4 selectInput checkboxInput hr h5 p em actionButton icon br downloadButton
+#' @importFrom DT dataTableOutput
 #' @export
 expressionPlotControlsUI <- function(id) {
   ns <- NS(id)
@@ -46,6 +48,7 @@ expressionPlotControlsUI <- function(id) {
 #' UI for Expression Plot Output Area
 #' @description Creates the UI for the expression plot output in the main panel.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList plotOutput
 #' @export
 expressionPlotOutputUI <- function(id) {
   ns <- NS(id)
@@ -58,6 +61,8 @@ expressionPlotOutputUI <- function(id) {
 #' @description Handles the logic for generating and displaying violin or box plots.
 #' @param id Namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom shiny moduleServer NS reactiveVal observeEvent req updateSelectInput validate need showNotification eventReactive renderPlot downloadHandler
+#' @importFrom DT renderDataTable datatable
 #' @importFrom purrr map_dfr
 #' @importFrom dplyr left_join mutate select
 #' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot facet_wrap coord_flip scale_fill_manual labs theme element_line element_text element_rect

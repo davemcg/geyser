@@ -3,6 +3,8 @@
 #' UI for the Data Loader Module (Sidebar Controls)
 #' @description Creates the UI for the data loader module, which appears in the sidebar.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList h4 selectInput conditionalPanel fileInput br tags verbatimTextOutput div hr h5 p em actionButton
+#' @importFrom shinyjs hidden
 #' @importFrom shinyFiles shinyDirButton
 #' @export
 #' 
@@ -58,6 +60,8 @@ dataLoaderUI <- function(id) {
 #' UI for the Data Loader Output Area (Main Panel)
 #' @description Creates the UI for the data loader's output, which appears in the main panel.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList h4 hr
+#' @importFrom DT DTOutput
 #' @export
 #' 
 dataLoaderOutputUI <- function(id) {
@@ -76,6 +80,8 @@ dataLoaderOutputUI <- function(id) {
 #' @description Handles the logic for loading data from different sources like MGIF, RDS, and HDF5.
 #' @param id Namespace ID.
 #' @return A reactive list containing `$config`, `$obs_data`, `$gene_table`, and a data access function `$get_gene_data`.
+#' @importFrom shiny moduleServer reactiveValues reactiveVal observeEvent req updateSelectInput showNotification showModal modalDialog tags renderText removeNotification reactive
+#' @importFrom DT renderDataTable datatable
 #' @importFrom yaml read_yaml
 #' @importFrom data.table fread as.data.table data.table uniqueN
 #' @importFrom shinyFiles shinyDirChoose parseDirPath getVolumes
@@ -84,6 +90,7 @@ dataLoaderOutputUI <- function(id) {
 #' @importFrom SingleCellExperiment reducedDimNames reducedDim
 #' @importFrom Seurat DefaultAssay GetAssayData
 #' @importFrom utils head
+#' @importFrom fs path_home
 #' @export
 #' 
 dataLoaderServer <- function(id) {
