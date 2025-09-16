@@ -1,9 +1,9 @@
 # UMAP PLOT MODULE | R/module_umap_plot.R ----
 
-# UI Controls | umapPlotControlsUI ----
 #' UI for UMAP Plot Controls
-#'
+#' @description Creates the UI for the UMAP plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @export
 umapPlotControlsUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -26,10 +26,10 @@ umapPlotControlsUI <- function(id) {
   )
 }
 
-# UI Output | umapPlotOutputUI ----
 #' UI for UMAP Plot Output Area
-#'
+#' @description Creates the UI for the UMAP plot output in the main panel.
 #' @param id Namespace ID.
+#' @export
 umapPlotOutputUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -107,11 +107,19 @@ umapPlotOutputUI <- function(id) {
 }
 
 
-# Server | umapPlotServer ----
 #' Server for the UMAP Plot Module
-#'
+#' @description Handles the logic for generating and displaying UMAP plots for gene expression and metadata.
 #' @param id Namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom stats runif median
+#' @importFrom dplyr group_by summarise slice_sample ungroup bind_rows filter mutate left_join
+#' @importFrom data.table copy fifelse
+#' @importFrom pals trubetskoy okabe alphabet2 alphabet glasbey viridis
+#' @importFrom scattermore geom_scattermore
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom cowplot theme_cowplot
+#' @importFrom ggplot2 ggplot annotate aes scale_color_manual scale_alpha_identity geom_point guides ggtitle scale_colour_gradient2 scale_colour_gradientn labs
+#' @export
 umapPlotServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns

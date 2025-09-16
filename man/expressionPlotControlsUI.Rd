@@ -10,5 +10,5 @@ expressionPlotControlsUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for Expression Plot Controls
+Creates the UI for the expression plot controls in the sidebar.
 }

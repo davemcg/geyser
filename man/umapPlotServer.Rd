@@ -12,5 +12,5 @@ umapPlotServer(id, loaded_data)
 \item{loaded_data}{A reactive list from the dataLoaderServer module.}
 }
 \description{
-Server for the UMAP Plot Module
+Handles the logic for generating and displaying UMAP plots for gene expression and metadata.
 }

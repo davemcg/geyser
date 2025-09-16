@@ -10,5 +10,5 @@ tableExplorerControlsUI(id)
 \item{id}{A namespace ID.}
 }
 \description{
-UI for Table Explorer Controls
+Creates the UI for the table explorer controls in the sidebar.
 }

@@ -1,9 +1,10 @@
 # DATA LOADER MODULE | R/module_data_loader.R ----
 
-# UI Controls | dataLoaderUI ----
 #' UI for the Data Loader Module (Sidebar Controls)
-#'
+#' @description Creates the UI for the data loader module, which appears in the sidebar.
 #' @param id Namespace ID.
+#' @importFrom shinyFiles shinyDirButton
+#' @export
 dataLoaderUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -53,10 +54,10 @@ dataLoaderUI <- function(id) {
   )
 }
 
-# UI Output | dataLoaderOutputUI ----
 #' UI for the Data Loader Output Area (Main Panel)
-#'
+#' @description Creates the UI for the data loader's output, which appears in the main panel.
 #' @param id Namespace ID.
+#' @export
 dataLoaderOutputUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -69,11 +70,19 @@ dataLoaderOutputUI <- function(id) {
 }
 
 
-# Server | dataLoaderServer ----
 #' Server for the Data Loader Module
-#'
+#' @description Handles the logic for loading data from different sources like MGIF, RDS, and HDF5.
 #' @param id Namespace ID.
 #' @return A reactive list containing `$config`, `$obs_data`, `$gene_table`, and a data access function `$get_gene_data`.
+#' @importFrom yaml read_yaml
+#' @importFrom data.table fread as.data.table data.table uniqueN
+#' @importFrom shinyFiles shinyDirChoose parseDirPath getVolumes
+#' @importFrom HDF5Array loadHDF5SummarizedExperiment
+#' @importFrom SummarizedExperiment colData rowData reducedDimNames reducedDim assayNames assay
+#' @importFrom Seurat DefaultAssay GetAssayData
+#' @importFrom utils head
+#' @importFrom methods inherits
+#' @export
 dataLoaderServer <- function(id) {
   moduleServer(id, function(input, output, session) {
     

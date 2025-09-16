@@ -13,5 +13,5 @@ dataLoaderServer(id)
 A reactive list containing `$config`, `$obs_data`, `$gene_table`, and a data access function `$get_gene_data`.
 }
 \description{
-Server for the Data Loader Module
+Handles the logic for loading data from different sources like MGIF, RDS, and HDF5.
 }

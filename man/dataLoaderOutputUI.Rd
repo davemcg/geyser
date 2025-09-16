@@ -10,5 +10,5 @@ dataLoaderOutputUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for the Data Loader Output Area (Main Panel)
+Creates the UI for the data loader's output, which appears in the main panel.
 }

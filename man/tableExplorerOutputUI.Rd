@@ -10,5 +10,5 @@ tableExplorerOutputUI(id)
 \item{id}{A namespace ID.}
 }
 \description{
-UI for Table Explorer Output
+Creates the UI for the table explorer output in the main panel.
 }

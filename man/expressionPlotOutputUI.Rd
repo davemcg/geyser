@@ -10,5 +10,5 @@ expressionPlotOutputUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for Expression Plot Output Area
+Creates the UI for the expression plot output in the main panel.
 }

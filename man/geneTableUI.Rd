@@ -10,5 +10,5 @@ geneTableUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for the Gene Table Module
+A reusable UI component that displays a searchable, selectable gene table.
 }

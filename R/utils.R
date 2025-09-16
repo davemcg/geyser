@@ -1,5 +1,5 @@
 # HELPER FUNCTIONS | R/utils.R ----
-
+#' @importFrom dplyr group_by summarise n arrange desc
 # Define Core Plotting Theme ----
 #' Define Core Plotting Theme
 #'

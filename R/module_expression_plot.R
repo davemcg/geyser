@@ -1,9 +1,9 @@
 # EXPRESSION PLOT MODULE | R/module_expression_plot.R ----
 
-# UI Controls | expressionPlotControlsUI ----
 #' UI for Expression Plot Controls
-#'
+#' @description Creates the UI for the expression plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @export
 expressionPlotControlsUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -43,10 +43,10 @@ expressionPlotControlsUI <- function(id) {
   )
 }
 
-# UI Output | expressionPlotOutputUI ----
 #' UI for Expression Plot Output Area
-#'
+#' @description Creates the UI for the expression plot output in the main panel.
 #' @param id Namespace ID.
+#' @export
 expressionPlotOutputUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -54,6 +54,17 @@ expressionPlotOutputUI <- function(id) {
   )
 }
 
+#' Server for the Expression Plot Module
+#' @description Handles the logic for generating and displaying violin or box plots.
+#' @param id Namespace ID.
+#' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom purrr map_dfr
+#' @importFrom dplyr left_join mutate select
+#' @importFrom ggplot2 ggplot aes geom_violin geom_boxplot facet_wrap coord_flip scale_fill_manual labs theme element_line element_text element_rect
+#' @importFrom pals trubetskoy glasbey
+#' @importFrom rlang .data
+#' @importFrom stats setNames
+#' @export
 expressionPlotServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
