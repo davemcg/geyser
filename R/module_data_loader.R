@@ -5,6 +5,7 @@
 #' @param id Namespace ID.
 #' @importFrom shinyFiles shinyDirButton
 #' @export
+#' 
 dataLoaderUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -58,6 +59,7 @@ dataLoaderUI <- function(id) {
 #' @description Creates the UI for the data loader's output, which appears in the main panel.
 #' @param id Namespace ID.
 #' @export
+#' 
 dataLoaderOutputUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -78,11 +80,12 @@ dataLoaderOutputUI <- function(id) {
 #' @importFrom data.table fread as.data.table data.table uniqueN
 #' @importFrom shinyFiles shinyDirChoose parseDirPath getVolumes
 #' @importFrom HDF5Array loadHDF5SummarizedExperiment
-#' @importFrom SummarizedExperiment colData rowData reducedDimNames reducedDim assayNames assay
+#' @importFrom SummarizedExperiment colData rowData assayNames assay
+#' @importFrom SingleCellExperiment reducedDimNames reducedDim
 #' @importFrom Seurat DefaultAssay GetAssayData
 #' @importFrom utils head
-#' @importFrom methods inherits
 #' @export
+#' 
 dataLoaderServer <- function(id) {
   moduleServer(id, function(input, output, session) {
     

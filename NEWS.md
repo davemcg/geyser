@@ -1,3 +1,8 @@
+# geyser 1.00.1
+
+Prototype addition of "scGeyser", a Shiny UI visualization tool for SingleCellExperiment 
+(SCE), which is related to SummarizedExperiment. 
+
 # geyser 0.99.8
 
 Add BiocStyles to import (failed on "nebbiolo1" automated build testing)

@@ -4,6 +4,7 @@
 #' @description Creates the UI for the dot plot controls in the sidebar.
 #' @param id Namespace ID.
 #' @export
+#' 
 dotPlotControlsUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -77,6 +78,7 @@ dotPlotOutputUI <- function(id) {
 #' @importFrom grDevices png dev.off
 #' @importFrom stats setNames
 #' @export
+#' 
 dotPlotServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
