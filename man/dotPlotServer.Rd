@@ -12,5 +12,5 @@ dotPlotServer(id, loaded_data)
 \item{loaded_data}{A reactive list from the dataLoaderServer module.}
 }
 \description{
-Server for the Dot Plot Module.
+Handles the logic for generating and displaying a dot plot based on user selections.
 }

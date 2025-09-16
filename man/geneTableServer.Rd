@@ -15,5 +15,5 @@ geneTableServer(id, gene_data)
 A reactive containing the name of the gene selected from the table.
 }
 \description{
-Server for the Gene Table Module
+A reusable server component for the gene table that returns the selected gene.
 }

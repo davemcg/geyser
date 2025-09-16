@@ -10,5 +10,5 @@ dotPlotControlsUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for Dot Plot Controls
+Creates the UI for the dot plot controls in the sidebar.
 }

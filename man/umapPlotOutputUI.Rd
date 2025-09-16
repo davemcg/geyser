@@ -10,5 +10,5 @@ umapPlotOutputUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for UMAP Plot Output Area
+Creates the UI for the UMAP plot output in the main panel.
 }

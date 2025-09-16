@@ -10,5 +10,5 @@ dotPlotOutputUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for Dot Plot Output Area
+Creates the UI for the dot plot output in the main panel.
 }

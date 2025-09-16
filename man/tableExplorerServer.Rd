@@ -12,5 +12,5 @@ tableExplorerServer(id, loaded_data)
 \item{loaded_data}{A reactive list from the dataLoaderServer module.}
 }
 \description{
-Server for the Table Explorer Module
+Handles the logic for summarizing metadata and gene expression in tables.
 }

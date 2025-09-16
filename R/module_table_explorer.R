@@ -1,8 +1,9 @@
 # TABLE EXPLORER MODULE | R/module_table_explorer.R ----
 
-# UI Controls | tableExplorerControlsUI ----
-#' @title UI for Table Explorer Controls
+#' UI for Table Explorer Controls
+#' @description Creates the UI for the table explorer controls in the sidebar.
 #' @param id A namespace ID.
+#' @export
 tableExplorerControlsUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -39,9 +40,10 @@ tableExplorerControlsUI <- function(id) {
   )
 }
 
-# UI Output | tableExplorerOutputUI ----
-#' @title UI for Table Explorer Output
+#' UI for Table Explorer Output
+#' @description Creates the UI for the table explorer output in the main panel.
 #' @param id A namespace ID.
+#' @export
 tableExplorerOutputUI <- function(id) {
   ns <- NS(id)
   fluidRow(
@@ -62,10 +64,15 @@ tableExplorerOutputUI <- function(id) {
   )
 }
 
-# Server | tableExplorerServer ----
-#' @title Server for the Table Explorer Module
+#' Server for the Table Explorer Module
+#' @description Handles the logic for summarizing metadata and gene expression in tables.
 #' @param id A namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom rlang syms
+#' @importFrom dplyr group_by summarise n arrange left_join mutate
+#' @importFrom stats setNames
+#' @importFrom DT formatRound
+#' @export
 tableExplorerServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns

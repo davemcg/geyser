@@ -10,5 +10,5 @@ umapPlotControlsUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for UMAP Plot Controls
+Creates the UI for the UMAP plot controls in the sidebar.
 }

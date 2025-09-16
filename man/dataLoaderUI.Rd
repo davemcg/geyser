@@ -10,5 +10,5 @@ dataLoaderUI(id)
 \item{id}{Namespace ID.}
 }
 \description{
-UI for the Data Loader Module (Sidebar Controls)
+Creates the UI for the data loader module, which appears in the sidebar.
 }

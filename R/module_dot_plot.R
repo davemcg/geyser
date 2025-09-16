@@ -1,9 +1,9 @@
 # DOT PLOT MODULE | R/module_dot_plot.R ----
 
-# UI Controls | dotPlotControlsUI ----
 #' UI for Dot Plot Controls
-#'
+#' @description Creates the UI for the dot plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @export
 dotPlotControlsUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -52,10 +52,10 @@ dotPlotControlsUI <- function(id) {
   )
 }
 
-# UI Output | dotPlotOutputUI ----
 #' UI for Dot Plot Output Area
-#'
+#' @description Creates the UI for the dot plot output in the main panel.
 #' @param id Namespace ID.
+#' @export
 dotPlotOutputUI <- function(id) {
   ns <- NS(id)
   tagList(
@@ -64,11 +64,19 @@ dotPlotOutputUI <- function(id) {
 }
 
 
-# Server | dotPlotServer ----
 #' Server for the Dot Plot Module.
-#'
+#' @description Handles the logic for generating and displaying a dot plot based on user selections.
 #' @param id A namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom purrr map_dfr
+#' @importFrom dplyr left_join mutate group_by summarise n
+#' @importFrom data.table as.data.table dcast
+#' @importFrom circlize colorRamp2
+#' @importFrom grid gpar unit grid.circle
+#' @importFrom ComplexHeatmap Heatmap Legend draw
+#' @importFrom grDevices png dev.off
+#' @importFrom stats setNames
+#' @export
 dotPlotServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
