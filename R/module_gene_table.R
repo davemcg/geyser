@@ -3,6 +3,8 @@
 #' UI for the Gene Table Module
 #' @description A reusable UI component that displays a searchable, selectable gene table.
 #' @param id Namespace ID.
+#' @importFrom shiny NS
+#' @importFrom DT DTOutput
 #' @export
 #' 
 geneTableUI <- function(id) {
@@ -15,6 +17,8 @@ geneTableUI <- function(id) {
 #' @description A reusable server component for the gene table that returns the selected gene.
 #' @param id Namespace ID.
 #' @param gene_data A reactive data.table of gene information.
+#' @importFrom shiny moduleServer req reactive
+#' @importFrom DT renderDataTable datatable
 #' @return A reactive containing the name of the gene selected from the table.
 #' @export
 #' 

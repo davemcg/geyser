@@ -3,6 +3,7 @@
 #' UI for Table Explorer Controls
 #' @description Creates the UI for the table explorer controls in the sidebar.
 #' @param id A namespace ID.
+#' @importFrom shiny NS tagList h4 selectInput numericInput hr h5 actionButton icon
 #' @export
 tableExplorerControlsUI <- function(id) {
   ns <- NS(id)
@@ -43,6 +44,8 @@ tableExplorerControlsUI <- function(id) {
 #' UI for Table Explorer Output
 #' @description Creates the UI for the table explorer output in the main panel.
 #' @param id A namespace ID.
+#' @importFrom shiny NS fluidRow column h4 p em
+#' @importFrom DT DTOutput
 #' @export
 tableExplorerOutputUI <- function(id) {
   ns <- NS(id)
@@ -68,10 +71,11 @@ tableExplorerOutputUI <- function(id) {
 #' @description Handles the logic for summarizing metadata and gene expression in tables.
 #' @param id A namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom shiny moduleServer NS observeEvent req updateSelectInput eventReactive showNotification validate need
+#' @importFrom DT renderDataTable datatable formatRound
 #' @importFrom rlang syms
 #' @importFrom dplyr group_by summarise n arrange left_join mutate
 #' @importFrom stats setNames
-#' @importFrom DT formatRound
 #' @export
 tableExplorerServer <- function(id, loaded_data) {
   moduleServer(id, function(input, output, session) {

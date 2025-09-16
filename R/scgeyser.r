@@ -4,7 +4,15 @@
 #'
 #' @export
 #'
-#' @import shiny
+#' @importFrom shiny NS actionButton br checkboxInput column conditionalPanel
+#' @importFrom shiny downloadButton downloadHandler em eventReactive fluidRow
+#' @importFrom shiny h4 h5 hr HTML icon isolate moduleServer need
+#' @importFrom shiny numericInput fileInput
+#' @importFrom shiny observeEvent p plotOutput
+#' @importFrom shiny reactive reactiveVal renderPlot renderText req
+#' @importFrom shiny selectInput tagList tags updateSelectInput
+#' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
+#' @importFrom shiny nearPoints reactiveValues callModule shinyApp
 #' @importFrom shinyjs useShinyjs
 #' @import tidyverse
 #' @import yaml
@@ -14,7 +22,8 @@
 #' @import ggh4x
 #' @import pals
 #' @import cowplot
-#' @import bslib
+#' @importFrom bslib nav_menu nav_panel nav_spacer navset_card_tab page_fluid 
+#' @importFrom bslib page_navbar sidebar
 #' @importFrom DT renderDataTable datatable dataTableOutput
 #' @import ComplexHeatmap
 #' @import rlang
@@ -22,7 +31,7 @@
 #'
 scGeyser <- function() {
   # ----------------- UI -----------------
-  ui <- page_navbar(
+  ui <- bslib::page_navbar(
     shinyjs::useShinyjs(),
     id = "main_nav",
     title = "scGeyser",

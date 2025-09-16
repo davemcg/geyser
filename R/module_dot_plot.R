@@ -3,6 +3,8 @@
 #' UI for Dot Plot Controls
 #' @description Creates the UI for the dot plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList h4 selectInput checkboxInput h5 hr p em actionButton icon br downloadButton
+#' @importFrom DT dataTableOutput
 #' @export
 #' 
 dotPlotControlsUI <- function(id) {
@@ -56,6 +58,7 @@ dotPlotControlsUI <- function(id) {
 #' UI for Dot Plot Output Area
 #' @description Creates the UI for the dot plot output in the main panel.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList plotOutput
 #' @export
 dotPlotOutputUI <- function(id) {
   ns <- NS(id)
@@ -69,6 +72,8 @@ dotPlotOutputUI <- function(id) {
 #' @description Handles the logic for generating and displaying a dot plot based on user selections.
 #' @param id A namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
+#' @importFrom shiny moduleServer NS reactiveVal observeEvent req updateSelectInput validate need showNotification reactive renderPlot downloadHandler
+#' @importFrom DT renderDataTable datatable
 #' @importFrom purrr map_dfr
 #' @importFrom dplyr left_join mutate group_by summarise n
 #' @importFrom data.table as.data.table dcast

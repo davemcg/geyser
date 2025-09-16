@@ -1,8 +1,7 @@
-# UMAP PLOT MODULE | R/module_umap_plot.R ----
-
 #' UI for UMAP Plot Controls
 #' @description Creates the UI for the UMAP plot controls in the sidebar.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList h4 h5 numericInput checkboxInput selectInput hr downloadButton
 #' @export
 umapPlotControlsUI <- function(id) {
   ns <- NS(id)
@@ -29,6 +28,8 @@ umapPlotControlsUI <- function(id) {
 #' UI for UMAP Plot Output Area
 #' @description Creates the UI for the UMAP plot output in the main panel.
 #' @param id Namespace ID.
+#' @importFrom shiny NS tagList fluidRow column h4 plotOutput hr tags selectInput numericInput checkboxInput actionButton icon
+#' @importFrom DT dataTableOutput
 #' @export
 umapPlotOutputUI <- function(id) {
   ns <- NS(id)
@@ -111,7 +112,9 @@ umapPlotOutputUI <- function(id) {
 #' @description Handles the logic for generating and displaying UMAP plots for gene expression and metadata.
 #' @param id Namespace ID.
 #' @param loaded_data A reactive list from the dataLoaderServer module.
-#' @importFrom stats runif median
+#' @importFrom shiny moduleServer NS reactiveVal reactive eventReactive observeEvent req updateSelectInput isolate nearPoints renderText validate need renderPlot downloadHandler
+#' @importFrom DT renderDataTable datatable
+#' @importFrom stats median runif
 #' @importFrom dplyr group_by summarise slice_sample ungroup bind_rows filter mutate left_join
 #' @importFrom data.table copy fifelse
 #' @importFrom pals trubetskoy okabe alphabet2 alphabet glasbey viridis

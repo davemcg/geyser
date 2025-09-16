@@ -14,6 +14,7 @@ biocViews: Software, ShinyApps, GUI, GeneExpression
 Imports:
     bslib (>= 0.6.0),
     BiocStyle,
+    circlize,
     ComplexHeatmap,
     dplyr,
     DT,
@@ -41,7 +42,6 @@ Suggests:
     airway,
     knitr,
     DESeq2,
-    recount3,
     rmarkdown,
     stringr,
     testthat (>= 3.0.0),
