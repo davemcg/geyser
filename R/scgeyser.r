@@ -5,17 +5,17 @@
 #' @export
 #'
 #' @import shiny
-#' @import shinyjs
+#' @importFrom shinyjs useShinyjs
 #' @import tidyverse
 #' @import yaml
-#' @import data.table
+#' @importFrom data.table fread data.table
 #' @import scattermore
 #' @import ggrepel
 #' @import ggh4x
 #' @import pals
 #' @import cowplot
 #' @import bslib
-#' @import DT
+#' @importFrom DT renderDataTable datatable dataTableOutput
 #' @import ComplexHeatmap
 #' @import rlang
 #' @import shinyFiles

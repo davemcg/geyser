@@ -4,6 +4,7 @@
 #' @description A reusable UI component that displays a searchable, selectable gene table.
 #' @param id Namespace ID.
 #' @export
+#' 
 geneTableUI <- function(id) {
   ns <- NS(id)
   DT::DTOutput(ns("geneTable"))
@@ -16,6 +17,7 @@ geneTableUI <- function(id) {
 #' @param gene_data A reactive data.table of gene information.
 #' @return A reactive containing the name of the gene selected from the table.
 #' @export
+#' 
 geneTableServer <- function(id, gene_data) {
   moduleServer(id, function(input, output, session) {
     

@@ -1,11 +1,10 @@
-# HELPER FUNCTIONS | R/utils.R ----
-#' @importFrom dplyr group_by summarise n arrange desc
-# Define Core Plotting Theme ----
+#' HELPER FUNCTIONS | R/utils.R ----
 #' Define Core Plotting Theme
 #'
 #' Creates a consistent ggplot theme for all plots to reduce code duplication.
-#'
+#' @importFrom dplyr group_by summarise n arrange desc
 #' @return A list of ggplot theme elements.
+#' 
 get_core_plot_theme <- function() {
   list(
     cowplot::theme_cowplot(font_size = 7), 

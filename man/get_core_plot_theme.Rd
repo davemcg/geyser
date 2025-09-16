@@ -2,7 +2,8 @@
 % Please edit documentation in R/utils.R
 \name{get_core_plot_theme}
 \alias{get_core_plot_theme}
-\title{Define Core Plotting Theme}
+\title{HELPER FUNCTIONS | R/utils.R ----
+Define Core Plotting Theme}
 \usage{
 get_core_plot_theme()
 }
