@@ -42,6 +42,7 @@ Imports:
     pals,
     cowplot,
     rlang,
+    R.utils,
     shinyFiles
 Suggests:
     airway,
