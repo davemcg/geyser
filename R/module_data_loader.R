@@ -87,7 +87,6 @@ dataLoaderOutputUI <- function(id) {
 #' @importFrom shinyFiles shinyDirChoose parseDirPath getVolumes
 #' @importFrom HDF5Array loadHDF5SummarizedExperiment
 #' @importFrom SummarizedExperiment colData rowData assayNames assay
-#' @importFrom SingleCellExperiment reducedDimNames reducedDim
 #' @importFrom Seurat DefaultAssay GetAssayData
 #' @importFrom utils head
 #' @importFrom fs path_home
@@ -125,10 +124,10 @@ dataLoaderServer <- function(id) {
         
       } else if (inherits(obj, "SingleCellExperiment")) {
         meta_data <- as.data.frame(colData(obj))
-        reduction_names <- reducedDimNames(obj)
+        reduction_names <- SingleCellExperiment::reducedDimNames(obj)
         
         all_embeddings <- lapply(reduction_names, function(reduc_name) {
-          embeddings <- as.data.frame(reducedDim(obj, reduc_name))
+          embeddings <- as.data.frame(SingleCellExperiment::reducedDim(obj, reduc_name))
           n_dims <- min(ncol(embeddings), 20)
           if (n_dims == 0) return(NULL)
           embeddings_to_add <- embeddings[, 1:n_dims, drop = FALSE]
