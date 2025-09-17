@@ -5,14 +5,14 @@
 \title{geyser}
 \usage{
 geyser(
-  rse,
+  rse = NULL,
   app_name = "geyser",
   primary_color = "#3A5836",
   secondary_color = "#d5673e"
 )
 }
 \arguments{
-\item{rse}{SummarizedExperiment object}
+\item{rse}{SummarizedExperiment object. If NULL (the default), the app will start with a file upload screen.}
 
 \item{app_name}{Title name that goes on the top left of the Shiny app}
 
@@ -35,6 +35,8 @@ fully available to make custom plot groupings.
 if (interactive()){
   load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
   geyser(tiny_rse)
+  # Or launch with no RSE to see the file upload screen
+  # geyser()
 }
 
 }
