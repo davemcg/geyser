@@ -56,6 +56,15 @@ geyser <- function(rse = NULL,
   # Set max file upload size to 1GB
   options(shiny.maxRequestSize = 1000*1024^2)
   
+  # Assumes a 'data' subfolder in the app directory
+  server_data_dir <- "data"
+  available_files <- if (dir.exists(server_data_dir)) {
+    list.files(server_data_dir, pattern = "\\.rds$", ignore.case = TRUE)
+  } else {
+    character(0)
+  }
+  # <<< MODIFIED END >>>
+  
   ui <- page_fluid(
     theme = theme_ui(primary_color = primary_color, 
                      secondary_color = secondary_color),
@@ -67,17 +76,25 @@ geyser <- function(rse = NULL,
     rv <- reactiveValues(rse_object = rse)
     
     # Define the two different UIs
-    
-    # 1. File Upload UI (if no RSE is provided)
+
     file_upload_ui <- page_fluid(
       layout_columns(
         col_widths = c(3, 6, 3),
         div(), # empty column for spacing
-        card(
-          card_header("Load SummarizedExperiment"),
-          card_body(
-            p("Please upload an RDS file containing a SummarizedExperiment object to begin."),
-            fileInput("rse_upload", "Upload RDS file:", accept = ".rds")
+        navset_card_tab(
+          id = "load_method",
+          title = "Load SummarizedExperiment",
+          nav_panel("Load Server File",
+                    p("Select a pre-loaded dataset from the server."),
+                    selectInput("server_file_select", 
+                                "Available Datasets:", 
+                                choices = available_files),
+                    actionButton("load_server_file_button", "Load Selected File", 
+                                 icon = icon("hdd"), class = "btn-primary")
+          ),
+          nav_panel("Upload Your Own",
+                    p("Please upload an RDS file containing a SummarizedExperiment object to begin."),
+                    fileInput("rse_upload", "Upload RDS file:", accept = ".rds")
           )
         ),
         div() # empty column for spacing
@@ -212,6 +229,24 @@ geyser <- function(rse = NULL,
         showNotification(paste("Error reading RDS file:", e$message), type = "error")
       })
     })
+    
+    # <<< MODIFIED START: New observer to handle loading a server-side file >>>
+    observeEvent(input$load_server_file_button, {
+      req(input$server_file_select)
+      file_path <- file.path(server_data_dir, input$server_file_select)
+      
+      tryCatch({
+        loaded_rse <- readRDS(file_path)
+        if (inherits(loaded_rse, "SummarizedExperiment")) {
+          rv$rse_object <- loaded_rse
+        } else {
+          showNotification("Error: Selected file is not a SummarizedExperiment object.", type = "error")
+        }
+      }, error = function(e) {
+        showNotification(paste("Error reading RDS file:", e$message), type = "error")
+      })
+    })
+    # <<< MODIFIED END >>>
     
     # Observer to populate inputs and perform checks once the RSE object is available
     observeEvent(rv$rse_object, {
