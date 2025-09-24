@@ -21,6 +21,7 @@
 #' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
 #' @importFrom shiny nearPoints reactiveValues callModule fileInput
 #' @importFrom shiny renderUI uiOutput
+#' @import pals
 #' 
 #' @param rse SummarizedExperiment object. If NULL (the default), the app will start with a file upload screen.
 #' @param app_name Title name that goes on the top left of the Shiny app
@@ -63,7 +64,6 @@ geyser <- function(rse = NULL,
   } else {
     character(0)
   }
-  # <<< MODIFIED END >>>
   
   ui <- page_fluid(
     theme = theme_ui(primary_color = primary_color, 
@@ -76,7 +76,7 @@ geyser <- function(rse = NULL,
     rv <- reactiveValues(rse_object = rse)
     
     # Define the two different UIs
-
+    
     file_upload_ui <- page_fluid(
       layout_columns(
         col_widths = c(3, 6, 3),
@@ -84,6 +84,10 @@ geyser <- function(rse = NULL,
         navset_card_tab(
           id = "load_method",
           title = "Load SummarizedExperiment",
+          nav_panel("Upload Your Own",
+                    p("Please upload an RDS file containing a SummarizedExperiment object to begin."),
+                    fileInput("rse_upload", "Upload RDS file:", accept = ".rds")
+          ), 
           nav_panel("Load Server File",
                     p("Select a pre-loaded dataset from the server."),
                     selectInput("server_file_select", 
@@ -92,10 +96,7 @@ geyser <- function(rse = NULL,
                     actionButton("load_server_file_button", "Load Selected File", 
                                  icon = icon("hdd"), class = "btn-primary")
           ),
-          nav_panel("Upload Your Own",
-                    p("Please upload an RDS file containing a SummarizedExperiment object to begin."),
-                    fileInput("rse_upload", "Upload RDS file:", accept = ".rds")
-          )
+          selected = "Upload Your Own"
         ),
         div() # empty column for spacing
       )
@@ -159,10 +160,31 @@ geyser <- function(rse = NULL,
                                  choices = NULL,
                                  multiple = FALSE
                   ),
+                  # <<< MODIFIED START: Added color palette selector >>>
+                  selectInput("color_palette",
+                              "Color Palette:",
+                              choices = list(
+                                "ggplot2" = c("Default", "Set1", "Set2", "Set3", "Paired", "Accent", "Dark2", "Pastel1", "Pastel2"),
+                                "pals" = c("polychrome", "glasbey", "kelly",  "okabe", "watlington", "stepped", "tol", "trubetskoy")
+                              ),
+                              selected = "okabe"),
+                  # <<< MODIFIED END >>>
+                  selectizeInput("label_by",
+                                 "Label Points by:",
+                                 choices = NULL,
+                                 multiple = FALSE
+                  ),
                   layout_column_wrap(width = 0.5, 
                                      checkboxInput("expression_scale", 
                                                    label = 'log2(expression)', 
                                                    value = TRUE)),
+                  # <<< MODIFIED START: Added custom plot height input >>>
+                  numericInput("custom_plot_height",
+                               label = "Custom Plot Height (pixels, optional):",
+                               value = NA,
+                               min = 200,
+                               step = 50)
+                  # <<< MODIFIED END >>>
                 ),
                 accordion_panel("Sample Filtering",
                                 card(full_screen = TRUE,
@@ -230,7 +252,7 @@ geyser <- function(rse = NULL,
       })
     })
     
-    # <<< MODIFIED START: New observer to handle loading a server-side file >>>
+    # Observer to handle loading a server-side file
     observeEvent(input$load_server_file_button, {
       req(input$server_file_select)
       file_path <- file.path(server_data_dir, input$server_file_select)
@@ -246,7 +268,6 @@ geyser <- function(rse = NULL,
         showNotification(paste("Error reading RDS file:", e$message), type = "error")
       })
     })
-    # <<< MODIFIED END >>>
     
     # Observer to populate inputs and perform checks once the RSE object is available
     observeEvent(rv$rse_object, {
@@ -283,6 +304,11 @@ geyser <- function(rse = NULL,
                            choices = c("", colnames(colData(rv$rse_object))),
                            selected = '',
                            server = TRUE)
+      
+      updateSelectizeInput(session, 'label_by',
+                           choices = c("", colnames(colData(rv$rse_object))),
+                           selected = '',
+                           server = TRUE)
     })
     
     observeEvent(input$feature_col, {
@@ -308,22 +334,49 @@ geyser <- function(rse = NULL,
       req(rv$rse_object)
       .exp_plot(input, rv$rse_object)
     })
+    
+    # <<< MODIFIED START: Updated plot rendering with custom height option >>>
     output$exp_plot <- renderPlot({
-      exp_plot_reactive()$plot},
-      height = eventReactive(input$exp_plot_button,
-                             {max(600, 30 * length(input$selected_feature_choices) * exp_plot_reactive()$grouping_length)})
+      exp_plot_reactive()$plot
+    },
+    height = function() {
+      input$exp_plot_button # Dependency on the button
+      isolate({
+        if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
+          return(input$custom_plot_height)
+        } else {
+          req(exp_plot_reactive())
+          # Bug fix: original code used a non-existent input
+          return(max(600, 30 * length(input$features) * exp_plot_reactive()$grouping_length))
+        }
+      })
+    }
     )
+    # <<< MODIFIED END >>>
     
     # hm plot -----
     hm_plot_reactive <- eventReactive(input$hm_plot_button, {
       req(rv$rse_object)
       .hm_plot(input, rv$rse_object)
     })
+    
+    # <<< MODIFIED START: Updated plot rendering with custom height option >>>
     output$hm_plot <- renderPlot({
-      draw(hm_plot_reactive()$plot)},
-      height = eventReactive(input$hm_plot_button,
-                             {max(400, 0.7 * hm_plot_reactive()$grouping_length)})
+      draw(hm_plot_reactive()$plot)
+    },
+    height = function() {
+      input$hm_plot_button # Dependency on the button
+      isolate({
+        if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
+          return(input$custom_plot_height)
+        } else {
+          req(hm_plot_reactive())
+          return(max(400, 0.7 * hm_plot_reactive()$grouping_length))
+        }
+      })
+    }
     )
+    # <<< MODIFIED END >>>
     
     # sample data table -----
     output$table <- DT::renderDataTable({
