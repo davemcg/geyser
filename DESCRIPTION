@@ -17,6 +17,7 @@ License: CC0
 LazyData: false
 biocViews: Software, ShinyApps, GUI, GeneExpression
 Imports:
+    abind,
     bslib (>= 0.6.0),
     BiocStyle,
     circlize,
@@ -27,6 +28,7 @@ Imports:
     ggplot2,
     htmltools,
     magrittr,
+    matrixStats,
     shiny,
     SummarizedExperiment,
     tibble,
@@ -48,12 +50,12 @@ Suggests:
     airway,
     knitr,
     DESeq2,
+    HDF5Array,
     rmarkdown,
     stringr,
     testthat (>= 3.0.0),
     Seurat,
-    SingleCellExperiment,
-    HDF5Array
+    SingleCellExperiment
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Encoding: UTF-8
