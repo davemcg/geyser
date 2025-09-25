@@ -1,7 +1,10 @@
 # geyser 1.00.1
 
 Prototype addition of "scGeyser", a Shiny UI visualization tool for SingleCellExperiment 
-(SCE), which is related to SummarizedExperiment. 
+(SCE), which is related to SummarizedExperiment. Also supports Seurat, hdf5-backed
+SCE, and the "mgif" format. Geyser added the ability to load
+an SCE from an .rds file (when called with `geyser()`). Geyser now has
+color palettes (pals and ggplot2), custom plot height, and optional point labelling.
 
 # geyser 0.99.8
 

@@ -60,7 +60,7 @@
     stop()
   }
   
-  # Pull feature counts and left_join with colData
+  # Pull feature counts and left_join with colData slot
   if (input$feature_col == 'row names'){
     feature_logical <- features
   } else {
