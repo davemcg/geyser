@@ -4,14 +4,14 @@
 \alias{.exp_plot}
 \title{exp_plot}
 \usage{
-.exp_plot(input, rse, slot)
+.exp_plot(input, rse, data_source_name)
 }
 \arguments{
 \item{input}{From ui.R}
 
 \item{rse}{The rse object}
 
-\item{slot}{which slot to pull the count data from the rse assay}
+\item{data_source_name}{The name of the loaded dataset for the caption}
 }
 \value{
 Returns a list with the $plot slot holding ggplot object and $grouping_length contains
@@ -35,7 +35,7 @@ input$expression_scale <- TRUE
 input$color_by <- 'tissue'
 input$color_palette <- 'polychrome'
 input$show_points <- TRUE
-geyser:::.exp_plot(input, tiny_rse, 'counts')$plot
+geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
 }
 \author{
 David McGaughey

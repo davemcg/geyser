@@ -4,14 +4,14 @@
 \alias{.hm_plot}
 \title{hm_plot}
 \usage{
-.hm_plot(input, rse, slot)
+.hm_plot(input, rse, data_source_name)
 }
 \arguments{
 \item{input}{From ui.R}
 
 \item{rse}{rse object}
 
-\item{slot}{which slot to pull the count data from the rse assay}
+\item{data_source_name}{The name of the loaded dataset for the caption}
 }
 \value{
 Returns a ComplexHeatmap object
@@ -32,7 +32,7 @@ input$slot <- 'counts'
 input$expression_scale <- TRUE
 input$row_clust <- TRUE
 input$col_clust <- TRUE
-geyser:::.hm_plot(input, tiny_rse, 'counts')$plot
+geyser:::.hm_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
 }
 \author{
 David McGaughey

@@ -20,7 +20,7 @@
 #' 
 #' @param input From ui.R
 #' @param rse The rse object
-#' @param slot which slot to pull the count data from the rse assay
+#' @param data_source_name The name of the loaded dataset for the caption
 #'
 #' @details
 #'
@@ -45,9 +45,9 @@
 #' input$color_by <- 'tissue'
 #' input$color_palette <- 'polychrome'
 #' input$show_points <- TRUE
-#' geyser:::.exp_plot(input, tiny_rse, 'counts')$plot
+#' geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
 
-.exp_plot <- function(input, rse, slot){
+.exp_plot <- function(input, rse, data_source_name){
   user_selected_feature <- rowid <- group <- counts <- geyser_group <- geyser_color_by <- geyser_label_by <- NULL
   
   features <- input$features
@@ -92,9 +92,6 @@
   output <- list()
   
   # --- Data Preparation Step ---
-  # Prepare all grouping and aesthetic columns before creating the plot.
-  
-  # 1. Create grouping column for the x-axis
   if (length(groupings) == 1){
     pfdata$geyser_group <- pfdata[,groupings] %>% pull(1)
   } else {
@@ -102,30 +99,23 @@
       unite("geyser_group", all_of(groupings), remove = FALSE, sep = " | ")
   }
   
-  # 2. Create color column if needed
   if (input$color_by != ''){
     pfdata$geyser_color_by <- as.factor(pfdata[,input$color_by] %>% pull(1))
   }
   
-  # 3. Create label column if needed
   if (!is.null(input$label_by) && input$label_by != '') {
     pfdata$geyser_label_by <- pfdata[, input$label_by] %>% pull(1)
   }
   
   # --- Plotting Step ---
-  # Now build the plot using the fully prepared 'pfdata' data frame.
-  
-  # Initialize the plot with the base aesthetics
   if (input$color_by != ''){
     p <- ggplot(pfdata, aes(y=geyser_group, x=counts, color = geyser_color_by, group = geyser_group))
   } else {
     p <- ggplot(pfdata, aes(y=geyser_group, x=counts, group = geyser_group))
   }
   
-  # Add layers that inherit the aesthetics
   p <- p + geom_boxplot(alpha = 0.5, outlier.shape = NA)
   
-  # Conditionally add beeswarm points
   if (!is.null(input$show_points) && input$show_points) {
     if (input$color_by != '') {
       p <- p + geom_quasirandom(dodge.width = 0.75, orientation = 'y')
@@ -134,7 +124,6 @@
     }
   }
   
-  # Optionally add labels layer
   if (!is.null(input$label_by) && input$label_by != '') {
     p <- p + geom_text_repel(
       aes(label = geyser_label_by),
@@ -147,6 +136,7 @@
   
   # Add remaining plot elements
   p <- p +
+    labs(caption = paste0("geyser\n",data_source_name)) +
     xlab(paste0(groupings, collapse = ' | ')) +
     ylab(ylab_text) +
     theme_linedraw(base_size = 16) +
@@ -156,21 +146,15 @@
   if (input$color_by != '') {
     p <- p + guides(col = guide_legend(title = input$color_by))
     
-    # Check if a custom palette is selected (and not the default)
     if (!is.null(input$color_palette) && input$color_palette != 'Default') {
-      
-      # Get factor levels in their specific order to ensure correct color mapping.
       the_levels <- levels(pfdata$geyser_color_by)
       num_colors <- length(the_levels)
-      
       pals_palettes <- c("polychrome", "glasbey", "kelly",  "okabe", "watlington", "stepped", "tol", "trubetskoy")
       brewer_palettes <- c("Set1", "Set2", "Set3", "Paired", "Accent", "Dark2", "Pastel1", "Pastel2")
-      
       unnamed_colors <- NULL
       if (input$color_palette %in% brewer_palettes) {
         palette_info <- RColorBrewer::brewer.pal.info[input$color_palette, ]
         max_colors <- palette_info$maxcolors
-        
         if (num_colors <= max_colors) {
           if (num_colors < 3) {
             base_colors <- RColorBrewer::brewer.pal(3, input$color_palette)
@@ -185,28 +169,18 @@
         }
       } else if (input$color_palette %in% pals_palettes) {
         palette_func <- get(input$color_palette, asNamespace("pals"))
-        # Get the colors from the palette. If we request more colors than are
-        # available, it will return the maximum number it has.
         base_colors <- palette_func(num_colors)
-        
-        # Check if the palette returned fewer colors than we need.
         if (length(base_colors) < num_colors) {
-          # If so, create a color ramp function and generate the correct number.
           color_func <- grDevices::colorRampPalette(base_colors)
           unnamed_colors <- color_func(num_colors)
         } else {
-          # Otherwise, we have enough colors.
           unnamed_colors <- base_colors
         }
       }
-      
-      # Create a named vector by mapping colors to the factor levels.
-      # This explicitly tells ggplot which color to use for each category.
       if (!is.null(unnamed_colors)) {
         custom_colors <- setNames(unnamed_colors, the_levels)
         p <- p + scale_color_manual(values = custom_colors)
       }
-      
     }
   }
   

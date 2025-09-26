@@ -5,7 +5,9 @@ Addition of "scGeyser", a visualization tool for SingleCellExperiment
 Geyser now has the ability to load an SCE from an .rds file 
 (when called with `geyser()`). Geyser now has color palettes (pals and ggplot2), 
 custom plot height, optional points plotting, metadata-group based filtering, 
-and optional point text labeling. 
+and optional point text labeling. Point spread logic was changed from geom_beeswarm
+to geom_quasirandom as I found the former had some odd behavior with point spread
+in larger sample datasets.
 
 # geyser 0.99.8
 
