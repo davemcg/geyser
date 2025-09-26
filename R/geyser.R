@@ -5,19 +5,19 @@
 #' @export
 #' 
 #' @import bslib
-#' @importFrom dplyr any_of select pull row_number
-#' @importFrom ComplexHeatmap draw
+#' @importFrom dplyr any_of select pull row_number filter
+#' @importFrom ComplexHeatmap draw HeatmapAnnotation anno_text
 #' @import htmltools
 #' @import SummarizedExperiment
 #' @importFrom magrittr "%>%"
 #' @importFrom tibble rownames_to_column
 #' @importFrom shiny NS actionButton br checkboxInput column conditionalPanel
 #' @importFrom shiny downloadButton downloadHandler em eventReactive fluidRow
-#' @importFrom shiny h4 h5 hr HTML icon isolate moduleServer need
+#' @importFrom shiny h4 h5 hr HTML icon isolate modalDialog moduleServer need
 #' @importFrom shiny numericInput
 #' @importFrom shiny observeEvent p plotOutput
 #' @importFrom shiny reactive reactiveVal renderPlot renderText req
-#' @importFrom shiny selectInput tagList tags updateSelectInput
+#' @importFrom shiny selectInput showModal tagList tags updateSelectInput
 #' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
 #' @importFrom shiny nearPoints reactiveValues callModule fileInput
 #' @importFrom shiny renderUI uiOutput observe
@@ -60,190 +60,161 @@ geyser <- function(rse = NULL,
   options(shiny.maxRequestSize = 1000*1024^2)
   
   # Assumes a 'data' subfolder in the app directory
-  server_data_dir <- "data"
+  server_data_dir <- "geyserdata"
   available_files <- if (dir.exists(server_data_dir)) {
     list.files(server_data_dir, pattern = "\\.rds$", ignore.case = TRUE)
   } else {
     character(0)
   }
   
-  ui <- page_fluid(
+  ui <- page_navbar(
+    id = "main_nav", # ID for observing active tab
+    title = app_name,
     theme = theme_ui(primary_color = primary_color, 
                      secondary_color = secondary_color),
-    uiOutput("app_ui")
-  )
-  
-  server <- function(input, output, session) {
-    
-    rv <- reactiveValues(rse_object = rse)
-    
-    # Define the two different UIs
-    
-    file_upload_ui <- page_fluid(
-      layout_columns(
-        col_widths = c(3, 6, 3),
-        div(), # empty column for spacing
+    header = tagList(
+      tags$style(HTML('table.dataTable tr.active td, table.dataTable tr.active 
+                      {background-color: #3A5836 !important;}')),
+      tags$style(HTML('table.dataTable tr.selected td, table.dataTable td.selected 
+                      {background-color: pink !important;}'))
+    ),
+    sidebar = sidebar(
+      width = 380,
+      # Conditionally show data loading controls
+      conditionalPanel(
+        condition = "input.main_nav == 'Data Overview'",
+        h4("Load Data"),
         navset_card_tab(
           id = "load_method",
-          title = "Load SummarizedExperiment",
-          nav_panel("Upload Your Own",
-                    p("Please upload an RDS file containing a SummarizedExperiment object to begin."),
-                    fileInput("rse_upload", "Upload RDS file:", accept = ".rds")
+          nav_panel("Upload",
+                    p(em("Upload an .rds file containing a SummarizedExperiment object.")),
+                    fileInput("rse_upload", "Upload .rds File:", accept = ".rds")
           ), 
-          nav_panel("Load Server File",
-                    p("Select a pre-loaded dataset from the server."),
+          nav_panel("From Server",
+                    p(em("Select a pre-loaded dataset.")),
                     selectInput("server_file_select", 
                                 "Available Datasets:", 
                                 choices = available_files),
                     actionButton("load_server_file_button", "Load Selected File", 
-                                 icon = icon("hdd"), class = "btn-primary")
+                                 icon = icon("hdd"), class = "btn-primary w-100")
+          )
+        )
+      ),
+      # Conditionally show plotting controls
+      conditionalPanel(
+        condition = "input.main_nav == 'Plotting'",
+        h4("Plot Parameters"),
+        accordion(
+          multiple = TRUE,
+          open = "Grouping and Features",
+          accordion_panel(
+            "Grouping and Features",
+            selectizeInput("groupings", "Sample Grouping(s):", choices = NULL, multiple = TRUE),
+            selectizeInput("feature_col", "Assay Feature: ", choices = NULL, multiple = FALSE),
+            selectizeInput('features', "Features:", choices = NULL, multiple = TRUE),
+            selectizeInput("slot", "Assay Type:", choices = NULL, multiple = FALSE),
+            selectizeInput("color_by", "Color by:", choices = NULL, multiple = FALSE),
+            selectInput("color_palette", "Color Palette:",
+                        choices = list(
+                          "ggplot2" = c("Default", "Set1", "Set2", "Set3", "Paired", "Accent", "Dark2", "Pastel1", "Pastel2"),
+                          "pals" = c("polychrome", "glasbey", "kelly",  "okabe", "watlington", "stepped", "tol", "trubetskoy")
+                        ),
+                        selected = "okabe"),
+            selectizeInput("label_by", "Label Points by:", choices = NULL, multiple = FALSE),
+            layout_column_wrap(width = 0.5, 
+                               checkboxInput("expression_scale", label = 'log2(expression)', value = TRUE),
+                               checkboxInput("show_points", label = "Plot individual points", value = TRUE)
+            ),
+            numericInput("custom_plot_height", "Custom Plot Height (pixels, optional):", value = NA, min = 200, step = 50)
           ),
-          selected = "Upload Your Own"
-        ),
-        div() # empty column for spacing
+          accordion_panel("Group Filtering", uiOutput("dynamic_group_filters_ui")),
+          accordion_panel("Sample Filtering",
+                          card(DT::dataTableOutput("table", width = "105%", fill = FALSE),
+                               actionButton('clear_colData_row_selections', 'Clear Rows'))
+          )
+        )
       )
+    ),
+    nav_panel(
+      title = "Data Overview",
+      value = "Data Overview",
+      uiOutput("data_load_content")
+    ),
+    nav_panel(
+      title = "Plotting",
+      value = "Plotting",
+      uiOutput("plotting_content")
+    ),
+    nav_spacer(),
+    nav_menu(
+      title = "Info",
+      align = "right",
+      quick_start_ui(),
+      nav_item(tags$a("Code Source (external link)", 
+                      href = "https://github.com/davemcg/geyser", 
+                      target = "_blank"))
+    )
+  )
+  
+  server <- function(input, output, session) {
+    
+    rv <- reactiveValues(
+      rse_object = rse,
+      data_source_name = if (!is.null(rse)) "pre-loaded data" else NULL
     )
     
-    # 2. Main Application UI (once RSE is available)
-    main_app_ui <- page_navbar(
-      title = app_name,
-      header = tagList(
-        tags$style(HTML('table.dataTable tr.active td, table.dataTable tr.active 
-                      {background-color: #3A5836 !important;}')),
-        tags$style(HTML('table.dataTable tr.selected td, table.dataTable td.selected 
-                      {background-color: pink !important;}'))
-      ),
-      navbar_options = list(
-        collapsible = TRUE,
-        selected = "Full Sample Metadata"
-      ),
-      nav_panel(
-        title = "Full Sample Metadata",
+    # ---- Dynamic UI Rendering ----
+    
+    # Render the content for the "Data Overview" tab
+    output$data_load_content <- renderUI({
+      if (is.null(rv$rse_object)) {
+        card(
+          card_header("Welcome to Geyser!"),
+          card_body(
+            p("To begin, please load a SummarizedExperiment object using the controls in the sidebar."),
+            p("You can either upload your own .rds file or select a pre-loaded dataset from the server, if available.")
+          )
+        )
+      } else {
         card(
           full_screen = TRUE,
-          card_header("colData", class = 'bg-dark'),
+          card_header("Full Sample Metadata (colData)", class = 'bg-dark'),
           card_body(
-            DT::dataTableOutput("table_full", width = "85%",fill = FALSE)
+            DT::dataTableOutput("table_full", width = "100%", fill = FALSE)
           )
         )
-      ),
-      nav_panel(
-        title = "Plotting",
-        page_fluid(
-          layout_sidebar(
-            height = '100%',
-            sidebar = sidebar(
-              title = 'Plot Parameters',
-              open = TRUE,
-              accordion(
-                multiple = TRUE,
-                accordion_panel(
-                  "Grouping and Features",
-                  selectizeInput("groupings",
-                                 "Sample Grouping(s):",
-                                 choices = NULL,
-                                 multiple = TRUE,
-                  ),
-                  selectizeInput("feature_col",
-                                 "Assay Feature: ",
-                                 choices = NULL,
-                                 multiple = FALSE),
-                  selectizeInput('features',
-                                 "Features:",
-                                 choices = NULL,
-                                 multiple = TRUE),
-                  selectizeInput("slot",
-                                 "Assay Type:",
-                                 choices = NULL,
-                                 multiple = FALSE
-                  ),
-                  selectizeInput("color_by",
-                                 "Color by:",
-                                 choices = NULL,
-                                 multiple = FALSE
-                  ),
-                  selectInput("color_palette",
-                              "Color Palette:",
-                              choices = list(
-                                "ggplot2" = c("Default", "Set1", "Set2", "Set3", "Paired", "Accent", "Dark2", "Pastel1", "Pastel2"),
-                                "pals" = c("polychrome", "glasbey", "kelly",  "okabe", "watlington", "stepped", "tol", "trubetskoy")
-                              ),
-                              selected = "okabe"),
-                  selectizeInput("label_by",
-                                 "Label Points by:",
-                                 choices = NULL,
-                                 multiple = FALSE
-                  ),
-                  layout_column_wrap(width = 0.5, 
-                                     checkboxInput("expression_scale", 
-                                                   label = 'log2(expression)', 
-                                                   value = TRUE),
-                                     checkboxInput("show_points", 
-                                                   label = "Plot individual points", 
-                                                   value = TRUE)
-                  ),
-                  numericInput("custom_plot_height",
-                               label = "Custom Plot Height (pixels, optional):",
-                               value = NA,
-                               min = 200,
-                               step = 50)
-                ),
-                accordion_panel("Group Filtering",
-                                selectizeInput("group_filter_select",
-                                               "Filter by Group Combinations:",
-                                               choices = NULL,
-                                               multiple = TRUE)
-                ),
-                accordion_panel("Sample Filtering",
-                                card(full_screen = TRUE,
-                                     DT::dataTableOutput("table",width = "105%",
-                                                         fill = FALSE),
-                                     actionButton('clear_colData_row_selections', 
-                                                  'Clear Rows'))
-                )
-              ),
-              width = '40%'),
-            navset_card_tab(
-              full_screen = TRUE,
-              nav_panel("Box Plot",
-                        actionButton('exp_plot_button','Draw Box Plot'),
-                        plotOutput("exp_plot",height = '100%')
-              ),
-              nav_panel("Heatmap",
-                        layout_columns(fill = FALSE,
-                                       checkboxInput("col_clust", 
-                                                     label = "Cluster Columns", 
-                                                     value = TRUE),
-                                       checkboxInput("row_clust", 
-                                                     label = "Cluster Rows", 
-                                                     value = TRUE)),
-                        actionButton('hm_plot_button','Draw Heatmap'),
-                        plotOutput("hm_plot",height = '100%')
-              )
-            )
-          )
-        )
-      ),
-      nav_spacer(),
-      nav_menu(
-        title = "Info",
-        align = "right",
-        quick_start_ui(),
-        #overview_ui(),
-        nav_item(tags$a("Code Source (external link)", 
-                        href = "https://github.com/davemcg/geyser", 
-                        target = "_blank"))
-      )
-    )
-    
-    # Conditionally render the UI based on whether RSE is loaded
-    output$app_ui <- renderUI({
-      if (is.null(rv$rse_object)) {
-        return(file_upload_ui)
-      } else {
-        return(main_app_ui)
       }
     })
+    
+    # Render the content for the "Plotting" tab
+    output$plotting_content <- renderUI({
+      if (is.null(rv$rse_object)) {
+        card(
+          card_header("Plotting Area"),
+          card_body(
+            p("Please load a dataset to enable plotting."),
+            p("Once data is loaded, the plotting controls will appear in the sidebar when this tab is selected.")
+          )
+        )
+      } else {
+        navset_card_tab(
+          full_screen = TRUE,
+          nav_panel("Box Plot",
+                    actionButton('exp_plot_button','Draw Box Plot'),
+                    plotOutput("exp_plot",height = '100%')
+          ),
+          nav_panel("Heatmap",
+                    layout_columns(fill = FALSE,
+                                   checkboxInput("col_clust", label = "Cluster Columns", value = TRUE),
+                                   checkboxInput("row_clust", label = "Cluster Rows", value = TRUE)),
+                    actionButton('hm_plot_button','Draw Heatmap'),
+                    plotOutput("hm_plot",height = '100%')
+          )
+        )
+      }
+    })
+    
+    # ---- Data Loading Observers ----
     
     # Observer to handle the file upload
     observeEvent(input$rse_upload, {
@@ -252,6 +223,7 @@ geyser <- function(rse = NULL,
         uploaded_rse <- readRDS(input$rse_upload$datapath)
         if (inherits(uploaded_rse, "SummarizedExperiment")) {
           rv$rse_object <- uploaded_rse
+          rv$data_source_name <- input$rse_upload$name
         } else {
           showNotification("Error: Uploaded file is not a SummarizedExperiment object.", type = "error")
         }
@@ -269,6 +241,7 @@ geyser <- function(rse = NULL,
         loaded_rse <- readRDS(file_path)
         if (inherits(loaded_rse, "SummarizedExperiment")) {
           rv$rse_object <- loaded_rse
+          rv$data_source_name <- input$server_file_select
         } else {
           showNotification("Error: Selected file is not a SummarizedExperiment object.", type = "error")
         }
@@ -276,6 +249,8 @@ geyser <- function(rse = NULL,
         showNotification(paste("Error reading RDS file:", e$message), type = "error")
       })
     })
+    
+    # ---- Core Application Logic ----
     
     # Observer to populate inputs and perform checks once the RSE object is available
     observeEvent(rv$rse_object, {
@@ -337,51 +312,52 @@ geyser <- function(rse = NULL,
       }
     })
     
-    # Observer to populate the group filter input based on selected groupings
-    observe({
-      req(rv$rse_object)
+    # Render the dynamic filter controls UI
+    output$dynamic_group_filters_ui <- renderUI({
+      req(rv$rse_object, length(input$groupings) > 0)
       
-      if (length(input$groupings) > 0) {
-        cd <- colData(rv$rse_object) %>% data.frame()
-        
-        if (length(input$groupings) == 1) {
-          choices <- unique(cd[[input$groupings[[1]]]])
-        } else {
-          choices <- cd %>%
-            unite("combined_group", all_of(input$groupings), sep = " | ", remove = FALSE) %>%
-            pull(combined_group) %>%
-            unique()
-        }
-        
-        selected <- isolate(input$group_filter_select)
-        valid_selection <- selected[selected %in% choices]
-        updateSelectizeInput(session, "group_filter_select", 
-                             choices = sort(choices),
-                             selected = valid_selection)
-        
-      } else {
-        updateSelectizeInput(session, "group_filter_select", choices = character(0), selected = character(0))
-      }
+      filter_inputs <- lapply(input$groupings, function(group_col) {
+        choices <- colData(rv$rse_object)[[group_col]] %>% as.character() %>% unique() %>% sort()
+        selectizeInput(inputId = paste0("dynamic_filter_", group_col),
+                       label = paste("Filter by", group_col, ":"),
+                       choices = choices,
+                       multiple = TRUE,
+                       selected = NULL)
+      })
+      tagList(filter_inputs)
     })
     
-    # Reactive for RSE object filtered by selected groups
+    # Reactive for RSE object filtered by the intersection of dynamic selections
     rse_filtered_by_group <- reactive({
       rse <- rv$rse_object
       req(rse)
       
-      if (length(input$groupings) > 0 && !is.null(input$group_filter_select) && input$group_filter_select[1] != "") {
-        cd <- colData(rse) %>% data.frame()
+      active_groupings <- input$groupings
+      filtered_cd <- colData(rse) %>% as.data.frame()
+      any_filter_active <- FALSE
+      
+      for (g in active_groupings) {
+        filter_input_id <- paste0("dynamic_filter_", g)
+        selected_values <- input[[filter_input_id]]
         
-        if (length(input$groupings) == 1) {
-          combined_groups_vec <- cd[[input$groupings[[1]]]]
-        } else {
-          united_df <- unite(cd, "combined_group", all_of(input$groupings), sep = " | ", remove = FALSE)
-          combined_groups_vec <- united_df$combined_group
+        if (!is.null(selected_values) && length(selected_values) > 0) {
+          any_filter_active <- TRUE
+          filtered_cd <- filtered_cd %>%
+            dplyr::filter(.data[[g]] %in% selected_values)
         }
-        
-        samples_to_keep <- colnames(rse)[combined_groups_vec %in% input$group_filter_select]
+      }
+      
+      if (any_filter_active) {
+        samples_to_keep <- rownames(filtered_cd)
+        if (length(samples_to_keep) == 0) {
+          showModal(modalDialog(
+            title = "No Samples Found",
+            "Zero samples left, please revise the filtering",
+            easyClose = TRUE,
+            footer = NULL
+          ))
+        }
         return(rse[, samples_to_keep])
-        
       } else {
         return(rse)
       }
@@ -390,7 +366,7 @@ geyser <- function(rse = NULL,
     # expression plot ----
     exp_plot_reactive <- eventReactive(input$exp_plot_button, {
       req(rse_filtered_by_group())
-      .exp_plot(input, rse_filtered_by_group())
+      .exp_plot(input, rse_filtered_by_group(), rv$data_source_name)
     })
     
     output$exp_plot <- renderPlot({
@@ -406,13 +382,12 @@ geyser <- function(rse = NULL,
           return(max(600, 30 * length(input$features) * exp_plot_reactive()$grouping_length))
         }
       })
-    }
-    )
+    })
     
     # hm plot -----
     hm_plot_reactive <- eventReactive(input$hm_plot_button, {
       req(rse_filtered_by_group())
-      .hm_plot(input, rse_filtered_by_group())
+      .hm_plot(input, rse_filtered_by_group(), rv$data_source_name)
     })
     
     output$hm_plot <- renderPlot({
@@ -428,8 +403,7 @@ geyser <- function(rse = NULL,
           return(max(400, 0.7 * hm_plot_reactive()$grouping_length))
         }
       })
-    }
-    )
+    })
     
     # sample data table -----
     output$table <- DT::renderDataTable({
@@ -439,15 +413,10 @@ geyser <- function(rse = NULL,
         rownames_to_column('rse_sample_id') %>% 
         select('rse_sample_id', any_of(input$groupings)) %>%
         DT::datatable(rownames= FALSE,
-                      options = list(autoWidth = TRUE,
-                                     pageLength = 15,
-                                     dom = 'tp'),
+                      options = list(autoWidth = TRUE, pageLength = 15, dom = 'tp'),
                       filter = list(position = 'top', clear = FALSE))
-    },
-    server = TRUE
-    )
+    }, server = TRUE)
     
-    ## proxy to clear row selection -----
     proxy <- DT::dataTableProxy('table')
     observeEvent(input$clear_colData_row_selections, {
       proxy %>% DT::selectRows(NULL)
@@ -460,13 +429,10 @@ geyser <- function(rse = NULL,
         data.frame() %>% 
         rownames_to_column('rse_sample_id') %>% 
         DT::datatable(rownames= FALSE,
-                      options = list(autoWidth = TRUE,
-                                     pageLength = 25),
+                      options = list(autoWidth = TRUE, pageLength = 25),
                       filter = list(position = 'top', clear = FALSE),
                       selection = 'none')
-    },
-    server = TRUE
-    )
+    }, server = TRUE)
     
     session$onSessionEnded(function() {
       stopApp()
