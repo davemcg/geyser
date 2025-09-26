@@ -20,7 +20,9 @@
 #' @importFrom shiny selectInput tagList tags updateSelectInput
 #' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
 #' @importFrom shiny nearPoints reactiveValues callModule fileInput
-#' @importFrom shiny renderUI uiOutput
+#' @importFrom shiny renderUI uiOutput observe
+#' @importFrom tidyr unite
+#' @importFrom tidyselect all_of
 #' @import pals
 #' 
 #' @param rse SummarizedExperiment object. If NULL (the default), the app will start with a file upload screen.
@@ -160,7 +162,6 @@ geyser <- function(rse = NULL,
                                  choices = NULL,
                                  multiple = FALSE
                   ),
-                  # <<< MODIFIED START: Added color palette selector >>>
                   selectInput("color_palette",
                               "Color Palette:",
                               choices = list(
@@ -168,7 +169,6 @@ geyser <- function(rse = NULL,
                                 "pals" = c("polychrome", "glasbey", "kelly",  "okabe", "watlington", "stepped", "tol", "trubetskoy")
                               ),
                               selected = "okabe"),
-                  # <<< MODIFIED END >>>
                   selectizeInput("label_by",
                                  "Label Points by:",
                                  choices = NULL,
@@ -177,14 +177,22 @@ geyser <- function(rse = NULL,
                   layout_column_wrap(width = 0.5, 
                                      checkboxInput("expression_scale", 
                                                    label = 'log2(expression)', 
-                                                   value = TRUE)),
-                  # <<< MODIFIED START: Added custom plot height input >>>
+                                                   value = TRUE),
+                                     checkboxInput("show_points", 
+                                                   label = "Plot individual points", 
+                                                   value = TRUE)
+                  ),
                   numericInput("custom_plot_height",
                                label = "Custom Plot Height (pixels, optional):",
                                value = NA,
                                min = 200,
                                step = 50)
-                  # <<< MODIFIED END >>>
+                ),
+                accordion_panel("Group Filtering",
+                                selectizeInput("group_filter_select",
+                                               "Filter by Group Combinations:",
+                                               choices = NULL,
+                                               multiple = TRUE)
                 ),
                 accordion_panel("Sample Filtering",
                                 card(full_screen = TRUE,
@@ -329,43 +337,89 @@ geyser <- function(rse = NULL,
       }
     })
     
-    # expression plot ----
-    exp_plot_reactive <- eventReactive(input$exp_plot_button, {
+    # Observer to populate the group filter input based on selected groupings
+    observe({
       req(rv$rse_object)
-      .exp_plot(input, rv$rse_object)
+      
+      if (length(input$groupings) > 0) {
+        cd <- colData(rv$rse_object) %>% data.frame()
+        
+        if (length(input$groupings) == 1) {
+          choices <- unique(cd[[input$groupings[[1]]]])
+        } else {
+          choices <- cd %>%
+            unite("combined_group", all_of(input$groupings), sep = " | ", remove = FALSE) %>%
+            pull(combined_group) %>%
+            unique()
+        }
+        
+        selected <- isolate(input$group_filter_select)
+        valid_selection <- selected[selected %in% choices]
+        updateSelectizeInput(session, "group_filter_select", 
+                             choices = sort(choices),
+                             selected = valid_selection)
+        
+      } else {
+        updateSelectizeInput(session, "group_filter_select", choices = character(0), selected = character(0))
+      }
     })
     
-    # <<< MODIFIED START: Updated plot rendering with custom height option >>>
+    # Reactive for RSE object filtered by selected groups
+    rse_filtered_by_group <- reactive({
+      rse <- rv$rse_object
+      req(rse)
+      
+      if (length(input$groupings) > 0 && !is.null(input$group_filter_select) && input$group_filter_select[1] != "") {
+        cd <- colData(rse) %>% data.frame()
+        
+        if (length(input$groupings) == 1) {
+          combined_groups_vec <- cd[[input$groupings[[1]]]]
+        } else {
+          united_df <- unite(cd, "combined_group", all_of(input$groupings), sep = " | ", remove = FALSE)
+          combined_groups_vec <- united_df$combined_group
+        }
+        
+        samples_to_keep <- colnames(rse)[combined_groups_vec %in% input$group_filter_select]
+        return(rse[, samples_to_keep])
+        
+      } else {
+        return(rse)
+      }
+    })
+    
+    # expression plot ----
+    exp_plot_reactive <- eventReactive(input$exp_plot_button, {
+      req(rse_filtered_by_group())
+      .exp_plot(input, rse_filtered_by_group())
+    })
+    
     output$exp_plot <- renderPlot({
       exp_plot_reactive()$plot
     },
     height = function() {
-      input$exp_plot_button # Dependency on the button
+      input$exp_plot_button 
       isolate({
         if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
           return(input$custom_plot_height)
         } else {
           req(exp_plot_reactive())
-          # Bug fix: original code used a non-existent input
           return(max(600, 30 * length(input$features) * exp_plot_reactive()$grouping_length))
         }
       })
     }
     )
-    # <<< MODIFIED END >>>
     
     # hm plot -----
     hm_plot_reactive <- eventReactive(input$hm_plot_button, {
-      req(rv$rse_object)
-      .hm_plot(input, rv$rse_object)
+      req(rse_filtered_by_group())
+      .hm_plot(input, rse_filtered_by_group())
     })
     
-    # <<< MODIFIED START: Updated plot rendering with custom height option >>>
     output$hm_plot <- renderPlot({
       draw(hm_plot_reactive()$plot)
     },
     height = function() {
-      input$hm_plot_button # Dependency on the button
+      input$hm_plot_button 
       isolate({
         if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
           return(input$custom_plot_height)
@@ -376,12 +430,11 @@ geyser <- function(rse = NULL,
       })
     }
     )
-    # <<< MODIFIED END >>>
     
     # sample data table -----
     output$table <- DT::renderDataTable({
-      req(rv$rse_object)
-      colData(rv$rse_object) %>%
+      req(rse_filtered_by_group())
+      colData(rse_filtered_by_group()) %>%
         data.frame() %>% 
         rownames_to_column('rse_sample_id') %>% 
         select('rse_sample_id', any_of(input$groupings)) %>%

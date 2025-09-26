@@ -34,6 +34,7 @@ input$slot <- 'counts'
 input$expression_scale <- TRUE
 input$color_by <- 'tissue'
 input$color_palette <- 'polychrome'
+input$show_points <- TRUE
 geyser:::.exp_plot(input, tiny_rse, 'counts')$plot
 }
 \author{
