@@ -8,7 +8,7 @@
 #' @import ggplot2
 #' @import pals
 #' @import RColorBrewer
-#' @importFrom ggbeeswarm geom_beeswarm
+#' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom dplyr filter left_join mutate pull row_number 
 #' @importFrom magrittr "%>%"
@@ -44,6 +44,7 @@
 #' input$expression_scale <- TRUE
 #' input$color_by <- 'tissue'
 #' input$color_palette <- 'polychrome'
+#' input$show_points <- TRUE
 #' geyser:::.exp_plot(input, tiny_rse, 'counts')$plot
 
 .exp_plot <- function(input, rse, slot){
@@ -124,11 +125,13 @@
   # Add layers that inherit the aesthetics
   p <- p + geom_boxplot(alpha = 0.5, outlier.shape = NA)
   
-  # Add beeswarm with dodging if color is used
-  if (input$color_by != '') {
-    p <- p + geom_beeswarm(dodge.width = 0.75)
-  } else {
-    p <- p + geom_beeswarm()
+  # Conditionally add beeswarm points
+  if (!is.null(input$show_points) && input$show_points) {
+    if (input$color_by != '') {
+      p <- p + geom_quasirandom(dodge.width = 0.75, orientation = 'y')
+    } else {
+      p <- p + geom_quasirandom(orientation = 'y')
+    }
   }
   
   # Optionally add labels layer
@@ -203,7 +206,7 @@
         custom_colors <- setNames(unnamed_colors, the_levels)
         p <- p + scale_color_manual(values = custom_colors)
       }
-
+      
     }
   }
   
