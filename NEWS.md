@@ -7,7 +7,7 @@ Geyser now has the ability to load an SCE from an .rds file
 custom plot height, optional points plotting, metadata-group based filtering, 
 and optional point text labeling. Point spread logic was changed from geom_beeswarm
 to geom_quasirandom as I found the former had some odd behavior with point spread
-in larger sample datasets.
+in larger sample datasets. Geyser now has a persistant file loader.
 
 # geyser 0.99.8
 
