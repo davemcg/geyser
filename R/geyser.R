@@ -20,7 +20,7 @@
 #' @importFrom shiny selectInput showModal tagList tags updateSelectInput
 #' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
 #' @importFrom shiny nearPoints reactiveValues callModule fileInput
-#' @importFrom shiny renderUI uiOutput observe
+#' @importFrom shiny renderUI uiOutput observe withProgress incProgress
 #' @importFrom tidyr unite
 #' @importFrom tidyselect all_of
 #' @import pals
@@ -91,10 +91,11 @@ geyser <- function(rse = NULL,
                     fileInput("rse_upload", "Upload .rds File:", accept = ".rds")
           ), 
           nav_panel("From Server",
-                    p(em("Select a pre-loaded dataset.")),
+                    p(em("Select a server-held dataset")),
                     selectInput("server_file_select", 
                                 "Available Datasets:", 
                                 choices = available_files),
+                    br(),
                     actionButton("load_server_file_button", "Load Selected File", 
                                  icon = icon("hdd"), class = "btn-primary w-100")
           )
@@ -237,16 +238,25 @@ geyser <- function(rse = NULL,
       req(input$server_file_select)
       file_path <- file.path(server_data_dir, input$server_file_select)
       
-      tryCatch({
-        loaded_rse <- readRDS(file_path)
-        if (inherits(loaded_rse, "SummarizedExperiment")) {
-          rv$rse_object <- loaded_rse
-          rv$data_source_name <- input$server_file_select
-        } else {
-          showNotification("Error: Selected file is not a SummarizedExperiment object.", type = "error")
-        }
-      }, error = function(e) {
-        showNotification(paste("Error reading RDS file:", e$message), type = "error")
+      withProgress(message = paste("Loading", input$server_file_select), value = 0, {
+        
+        incProgress(0.3, detail = "Reading file from disk...")
+        
+        tryCatch({
+          loaded_rse <- readRDS(file_path)
+          
+          incProgress(0.6, detail = "Validating SummarizedExperiment object...")
+          
+          if (inherits(loaded_rse, "SummarizedExperiment")) {
+            rv$rse_object <- loaded_rse
+            rv$data_source_name <- input$server_file_select
+          } else {
+            showNotification("Error: Selected file is not a SummarizedExperiment object.", type = "error")
+          }
+        }, error = function(e) {
+          showNotification(paste("Error reading RDS file:", e$message), type = "error")
+        })
+        incProgress(0.1, detail = "Done.")
       })
     })
     
