@@ -8,7 +8,7 @@
 #' @import ggplot2
 #' @import pals
 #' @import RColorBrewer
-#' @importFrom ggbeeswarm geom_quasirandom
+#' @importFrom ggbeeswarm geom_quasirandom position_quasirandom
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom dplyr filter left_join mutate pull row_number 
 #' @importFrom magrittr "%>%"
@@ -62,10 +62,10 @@
   }
   
   # Pull feature counts and left_join with colData slot
-  if (input$feature_col == 'row names'){
-    feature_logical <- features
-  } else {
+  if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     feature_logical <- rowData(rse)[,input$feature_col] %in% features
+  } else {
+    feature_logical <- features
   }
   pdata <- assay((rse), input$slot)[feature_logical, ,drop = FALSE] %>%
     data.frame() %>% 
@@ -117,8 +117,9 @@
   p <- p + geom_boxplot(alpha = 0.5, outlier.shape = NA)
   
   if (!is.null(input$show_points) && input$show_points) {
+    pos <- position_quasirandom(dodge.width = 0.75)
     if (input$color_by != '') {
-      p <- p + geom_quasirandom(dodge.width = 0.75, orientation = 'y')
+      p <- p + geom_quasirandom(position = pos, orientation = 'y')
     } else {
       p <- p + geom_quasirandom(orientation = 'y')
     }
@@ -127,6 +128,7 @@
   if (!is.null(input$label_by) && input$label_by != '') {
     p <- p + geom_text_repel(
       aes(label = geyser_label_by),
+      position = pos,
       max.overlaps = Inf,
       box.padding = 0.6,
       min.segment.length = 0,
