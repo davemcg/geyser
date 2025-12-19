@@ -55,10 +55,10 @@
   }
   
   # pull feature counts and left_join with colData
-  if (input$feature_col == 'row names'){
-    feature_logical <- features
-  } else {
+  if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     feature_logical <- rowData(rse)[,input$feature_col] %in% features
+  } else {
+    feature_logical <- features
   }
   pdata <- assay((rse), input$slot)[feature_logical, ,drop = FALSE] %>%
     data.frame() %>% 
