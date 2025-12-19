@@ -35,7 +35,7 @@ input$expression_scale <- TRUE
 input$color_by <- 'tissue'
 input$color_palette <- 'polychrome'
 input$show_points <- TRUE
-geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
+geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot 
 }
 \author{
 David McGaughey

@@ -10,13 +10,14 @@
 #' @import RColorBrewer
 #' @importFrom ggbeeswarm geom_quasirandom position_quasirandom
 #' @importFrom ggrepel geom_text_repel
-#' @importFrom dplyr filter left_join mutate pull row_number 
+#' @importFrom dplyr filter left_join mutate pull row_number select
 #' @importFrom magrittr "%>%"
 #' @importFrom tidyr all_of pivot_longer pivot_wider unite
 #' @importFrom tibble rownames_to_column
 #' @importFrom grDevices colorRampPalette
 #' @importFrom utils head
 #' @importFrom stats setNames
+#' @importFrom rlang sym
 #' 
 #' @param input From ui.R
 #' @param rse The rse object
@@ -24,14 +25,14 @@
 #'
 #' @details
 #'
-#' Makes the box plot for the geyser Shiny app
+#' Makes the box plot for the geyser Shiny app 
 #'
 #' @author David McGaughey
 #'
 #' @returns 
 #' 
 #' Returns a list with the $plot slot holding ggplot object and $grouping_length contains
-#' the number of features to scale the plot
+#' the number of features to scale the plot 
 #' 
 #' @examples
 #'
@@ -45,10 +46,10 @@
 #' input$color_by <- 'tissue'
 #' input$color_palette <- 'polychrome'
 #' input$show_points <- TRUE
-#' geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
+#' geyser:::.exp_plot(input, tiny_rse, "tiny_rse.Rdata")$plot 
 
 .exp_plot <- function(input, rse, data_source_name){
-  user_selected_feature <- rowid <- group <- counts <- geyser_group <- geyser_color_by <- geyser_label_by <- NULL
+  user_selected_feature <- rowid <- group <- counts <- geyser_group <- geyser_color_by <- geyser_label_by <- facet_label <- rse_row_id <- NULL
   
   features <- input$features
   groupings <- input$groupings
@@ -61,28 +62,46 @@
     stop()
   }
   
-  # Pull feature counts and left_join with colData slot
+  # Safety check for empty rowData or specific column selection 
   if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
-    feature_logical <- rowData(rse)[,input$feature_col] %in% features
+    feature_logical <- rowData(rse)[, input$feature_col] %in% features
   } else {
     feature_logical <- features
   }
-  pdata <- assay((rse), input$slot)[feature_logical, ,drop = FALSE] %>%
+  
+  # Pull feature counts 
+  pdata <- assay((rse), input$slot)[feature_logical, , drop = FALSE] %>%
     data.frame() %>% 
-    rownames_to_column('user_selected_feature') %>% 
-    pivot_longer(-user_selected_feature, values_to = 'counts', names_to = 'sample_unique_id') %>%
+    rownames_to_column('rse_row_id') %>% 
+    pivot_longer(-rse_row_id, values_to = 'counts', names_to = 'sample_unique_id')
+  
+  # Create dynamic facet labels to handle "one-to-many" symbol matches 
+  if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
+    row_meta <- rowData(rse) %>% 
+      data.frame() %>% 
+      rownames_to_column('rse_row_id') %>% 
+      select(rse_row_id, !!sym(input$feature_col))
+    
+    pdata <- pdata %>% 
+      left_join(row_meta, by = 'rse_row_id') %>% 
+      mutate(facet_label = paste0(.data[[input$feature_col]], " (", rse_row_id, ")"))
+  } else {
+    pdata <- pdata %>% mutate(facet_label = rse_row_id)
+  }
+  
+  # Join with colData slot 
+  pfdata <- pdata %>%
     left_join(colData((rse)) %>%
                 data.frame() %>% 
                 rownames_to_column('sample_unique_id') %>% 
                 mutate(rowid = row_number()),
               by = 'sample_unique_id')
-  if (length(input$table_rows_selected)){
-    pfdata <- pdata %>% filter(rowid %in% input$table_rows_selected)
-  } else {
-    pfdata <- pdata
-  }
   
-  # Optional (but set as default) log2 scaling
+  if (length(input$table_rows_selected)){
+    pfdata <- pfdata %>% filter(rowid %in% input$table_rows_selected)
+  } 
+  
+  # Optional (but set as default) log2 scaling 
   if (input$expression_scale){
     pfdata$counts <- log2(pfdata$counts + 1)
     ylab_text <- paste0("log2(", input$slot, ")")
@@ -108,6 +127,9 @@
   }
   
   # --- Plotting Step ---
+  # Shared position logic for points and labels 
+  pos <- position_quasirandom(dodge.width = 0.75) 
+  
   if (input$color_by != ''){
     p <- ggplot(pfdata, aes(y=geyser_group, x=counts, color = geyser_color_by, group = geyser_group))
   } else {
@@ -117,12 +139,7 @@
   p <- p + geom_boxplot(alpha = 0.5, outlier.shape = NA)
   
   if (!is.null(input$show_points) && input$show_points) {
-    pos <- position_quasirandom(dodge.width = 0.75)
-    if (input$color_by != '') {
-      p <- p + geom_quasirandom(position = pos, orientation = 'y')
-    } else {
-      p <- p + geom_quasirandom(orientation = 'y')
-    }
+    p <- p + geom_quasirandom(position = pos, orientation = 'y')
   }
   
   if (!is.null(input$label_by) && input$label_by != '') {
@@ -132,22 +149,22 @@
       max.overlaps = Inf,
       box.padding = 0.6,
       min.segment.length = 0,
-      size = 3.5
+      size = 3.5,
+      direction = "both"
     )
   }
   
-  # Add remaining plot elements
+  # Add remaining plot elements 
   p <- p +
     labs(caption = paste0("geyser\n",data_source_name)) +
     xlab(paste0(groupings, collapse = ' | ')) +
     ylab(ylab_text) +
     theme_linedraw(base_size = 16) +
-    facet_wrap(~user_selected_feature, ncol = 1)
+    facet_wrap(~facet_label, ncol = 1)
   
-  # Add legend title and custom color palette if color is used
+  # Color Palette and Legend logic
   if (input$color_by != '') {
     p <- p + guides(col = guide_legend(title = input$color_by))
-    
     if (!is.null(input$color_palette) && input$color_palette != 'Default') {
       the_levels <- levels(pfdata$geyser_color_by)
       num_colors <- length(the_levels)
@@ -187,7 +204,6 @@
   }
   
   output$plot <- p
-  
   output$grouping_length <- pfdata$geyser_group %>% unique() %>% length()
   output
 }
