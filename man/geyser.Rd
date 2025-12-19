@@ -8,7 +8,8 @@ geyser(
   rse = NULL,
   app_name = "geyser",
   primary_color = "#3A5836",
-  secondary_color = "#d5673e"
+  secondary_color = "#d5673e",
+  computer_data_dir = NULL
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ geyser(
 \item{primary_color}{The title bar color}
 
 \item{secondary_color}{The plot action button color}
+
+\item{computer_data_dir}{Optional folder path to existing SummarizedExperiment RDS files. 
+When given, the GUI will show the RDS files.}
 }
 \value{
 Shiny app

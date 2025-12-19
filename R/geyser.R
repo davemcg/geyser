@@ -14,7 +14,7 @@
 #' @importFrom shiny NS actionButton br checkboxInput column conditionalPanel
 #' @importFrom shiny downloadButton downloadHandler em eventReactive fluidRow
 #' @importFrom shiny h4 h5 hr HTML icon isolate modalDialog moduleServer need
-#' @importFrom shiny numericInput
+#' @importFrom shiny numericInput selectizeInput shinyApp
 #' @importFrom shiny observeEvent p plotOutput
 #' @importFrom shiny reactive reactiveVal renderPlot renderText req
 #' @importFrom shiny selectInput showModal tagList tags updateSelectInput
@@ -29,6 +29,8 @@
 #' @param app_name Title name that goes on the top left of the Shiny app
 #' @param primary_color The title bar color
 #' @param secondary_color The plot action button color
+#' @param computer_data_dir Optional folder path to existing SummarizedExperiment RDS files. 
+#' When given, the GUI will show the RDS files.
 #'
 #' @details
 #'
@@ -54,17 +56,17 @@
 geyser <- function(rse = NULL, 
                    app_name = "geyser",
                    primary_color = "#3A5836",
-                   secondary_color = "#d5673e") {
+                   secondary_color = "#d5673e",
+                   computer_data_dir = NULL) {
   
   # Set max file upload size to 1GB
   options(shiny.maxRequestSize = 1000*1024^2)
   
-  # Assumes a 'data' subfolder in the app directory
-  server_data_dir <- "geyserdata"
-  available_files <- if (dir.exists(server_data_dir)) {
-    list.files(server_data_dir, pattern = "\\.rds$", ignore.case = TRUE)
+  # Only attempt to list "pre-loaded" files if a path is provided and exists
+  available_files <- if (!is.null(computer_data_dir) && dir.exists(computer_data_dir)) { 
+    list.files(computer_data_dir, pattern = "\\.rds$", ignore.case = TRUE) 
   } else {
-    character(0)
+    character(0) # Returns empty vector if NULL or path doesn't exist 
   }
   
   ui <- page_navbar(
@@ -90,15 +92,17 @@ geyser <- function(rse = NULL,
                     p(em("Upload an .rds file containing a SummarizedExperiment object.")),
                     fileInput("rse_upload", "Upload .rds File:", accept = ".rds")
           ), 
-          nav_panel("From Server",
-                    p(em("Select a server-held dataset")),
-                    selectInput("server_file_select", 
-                                "Available Datasets:", 
-                                choices = available_files),
-                    br(),
-                    actionButton("load_server_file_button", "Load Selected File", 
-                                 icon = icon("hdd"), class = "btn-primary w-100")
-          )
+          if (!is.null(computer_data_dir) && length(available_files) > 0) {
+            nav_panel("From Folder",
+                      p(em("Select a dataset")),
+                      selectInput("computer_file_select", 
+                                  "Available Datasets:", 
+                                  choices = available_files),
+                      br(),
+                      actionButton("load_computer_file_button", "Load Selected File", 
+                                   icon = icon("hdd"), class = "btn-primary w-100")
+            )
+          }
         )
       ),
       # Conditionally show plotting controls
@@ -177,11 +181,31 @@ geyser <- function(rse = NULL,
           )
         )
       } else {
-        card(
-          full_screen = TRUE,
-          card_header("Full Sample Metadata (colData)", class = 'bg-dark'),
-          card_body(
-            DT::dataTableOutput("table_full", width = "100%", fill = FALSE)
+        # Extract and display metadata list 
+        meta_list <- S4Vectors::metadata(rv$rse_object)
+        
+        tagList(
+          # New Metadata Card 
+          card(
+            full_screen = TRUE,
+            min_height = "200px",
+            card_header("RSE Metadata", class = 'bg-dark'),
+            card_body(
+              if (length(meta_list) > 0) {
+                DT::datatable(t(data.frame(S4Vectors::metadata(rv$rse_object))))
+              } else {
+                p("No metadata available in this SummarizedExperiment object.")
+              }
+            )
+          ),
+          
+          # colData card
+          card(
+            full_screen = TRUE,
+            card_header("Full Sample Metadata (colData)", class = 'bg-dark'),
+            card_body(
+              DT::dataTableOutput("table_full", width = "100%", fill = FALSE)
+            )
           )
         )
       }
@@ -234,11 +258,11 @@ geyser <- function(rse = NULL,
     })
     
     # Observer to handle loading a server-side file
-    observeEvent(input$load_server_file_button, {
-      req(input$server_file_select)
-      file_path <- file.path(server_data_dir, input$server_file_select)
+    observeEvent(input$load_computer_file_button, {
+      req(input$computer_file_select)
+      file_path <- file.path(computer_data_dir, input$computer_file_select)
       
-      withProgress(message = paste("Loading", input$server_file_select), value = 0, {
+      withProgress(message = paste("Loading", input$computer_file_select), value = 0, {
         
         incProgress(0.3, detail = "Reading file from disk...")
         
@@ -249,7 +273,7 @@ geyser <- function(rse = NULL,
           
           if (inherits(loaded_rse, "SummarizedExperiment")) {
             rv$rse_object <- loaded_rse
-            rv$data_source_name <- input$server_file_select
+            rv$data_source_name <- input$computer_file_select
           } else {
             showNotification("Error: Selected file is not a SummarizedExperiment object.", type = "error")
           }
@@ -413,6 +437,12 @@ geyser <- function(rse = NULL,
           return(max(400, 0.7 * hm_plot_reactive()$grouping_length))
         }
       })
+    })
+    
+    # metdata info ----
+    output$metadata_display <- renderPrint({
+      req(rv$rse_object)
+      metadata(rv$rse_object)
     })
     
     # sample data table -----

@@ -13,6 +13,7 @@
 #' @importFrom tidyr pivot_longer pivot_wider unite
 #' @importFrom utils head
 #' @importFrom grid gpar
+#' @importFrom rlang sym
 #'
 #' 
 #' @param input From ui.R
@@ -42,7 +43,7 @@
 #' geyser:::.hm_plot(input, tiny_rse, "tiny_rse.Rdata")$plot
 
 .hm_plot <- function(input, rse, data_source_name){
-  user_selected_feature <- rowid <- sample_unique_id <- counts <- group <- NULL
+  user_selected_feature <- rowid <- sample_unique_id <- counts <- group <- rse_row_id <- NULL
   features <- input$features
   groupings <- input$groupings
   
@@ -54,26 +55,46 @@
     stop()
   }
   
-  # pull feature counts and left_join with colData
+  # --- Feature Selection Logic ---
+  # Safety check for empty rowData or specific column selection
   if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     feature_logical <- rowData(rse)[,input$feature_col] %in% features
   } else {
     feature_logical <- features
   }
+  
+  # Pull feature counts
   pdata <- assay((rse), input$slot)[feature_logical, ,drop = FALSE] %>%
     data.frame() %>% 
-    rownames_to_column('user_selected_feature') %>% 
-    pivot_longer(-user_selected_feature, values_to = 'counts', names_to = 'sample_unique_id') %>%
+    rownames_to_column('rse_row_id') %>% 
+    pivot_longer(-rse_row_id, values_to = 'counts', names_to = 'sample_unique_id')
+  
+  # Matches the facet title logic in geyser_exp_plot.R to handle duplicate symbols
+  if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
+    row_meta <- rowData(rse) %>% 
+      data.frame() %>% 
+      rownames_to_column('rse_row_id') %>% 
+      select(rse_row_id, !!sym(input$feature_col))
+    
+    pdata <- pdata %>% 
+      left_join(row_meta, by = 'rse_row_id') %>% 
+      mutate(user_selected_feature = paste0(.data[[input$feature_col]], " (", rse_row_id, ")"))
+  } else {
+    pdata <- pdata %>% mutate(user_selected_feature = rse_row_id)
+  }
+  
+  # Join with sample metadata (colData)
+  pfdata <- pdata %>%
     left_join(colData((rse)) %>%
                 data.frame() %>% 
                 rownames_to_column('sample_unique_id') %>% 
                 mutate(rowid = row_number()),
               by = 'sample_unique_id')
+  
   if (length(input$table_rows_selected)){
-    pfdata <- pdata %>% filter(rowid %in% input$table_rows_selected)
-  } else {
-    pfdata <- pdata
+    pfdata <- pfdata %>% filter(rowid %in% input$table_rows_selected)
   }
+  
   # optional (but set as default) log2 scaling
   if (input$expression_scale){
     pfdata$counts <- log2(pfdata$counts + 1)
@@ -81,20 +102,24 @@
   } else {
     lab_text <- "scale(c)"
   }
-  output <- list()
+  
   if (length(groupings) == 1){
     pfdata$group <- pfdata[,groupings] %>% pull(1)
   } else {
     pfdata <- pfdata %>%
       unite("group", all_of(groupings), remove = FALSE, sep = " | ")
   }
+  
   pfdf <- pfdata %>%
     select(user_selected_feature, sample_unique_id, counts) %>%
-    pivot_wider(names_from = sample_unique_id, values_from = counts) 
+    pivot_wider(names_from = sample_unique_id, values_from = counts)
+  
   col_labels <- colnames(pfdf)[-1]
   pfdf <- data.frame(pfdf)
   row.names(pfdf) <- pfdf$user_selected_feature
   pfdf <- pfdf[,-1]
+  
+  # Scaling across samples
   hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()])))
   
   row_clustering <- input$row_clust
@@ -102,22 +127,20 @@
     row_clustering <- FALSE
   }
   
-  # Create main heatmap object with the caption as a bottom column title
+  # Create Heatmap object
   hm <- Heatmap(hm_data,
                 column_split = pfdata %>%  pull(group) %>% head(ncol(hm_data)),
-                #column_title_rot = 90,
                 column_labels = col_labels,
                 cluster_columns = input$col_clust,
                 cluster_rows = row_clustering,
                 name = lab_text,
-                # Add caption as a bottom-aligned title
                 column_title = paste0("geyser\n", data_source_name),
                 column_title_side = "bottom",
                 column_title_gp = gpar(fontsize = 10, fontface = "italic")
   )
   
+  output <- list()
   output$plot <- hm
-  
   output$grouping_length <- nrow(pfdata) + (nchar(as.character(pfdata$group)) %>% max()) + (nchar(pfdf) %>% max())
   output
 }

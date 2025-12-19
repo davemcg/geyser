@@ -1,9 +1,11 @@
+# geyser 1.00.2
+
+Geyser looks for information in the `$metadata` slot to print on the loading screen. 
+
 # geyser 1.00.1
 
-Addition of "scGeyser", a visualization tool for SingleCellExperiment 
-(SCE). Also supports Seurat, hdf5-backed SCE, and the "mgif" format. 
 Geyser now has the ability to load an SCE from an .rds file 
-(when called with `geyser()`). Geyser now has color palettes (pals and ggplot2), 
+(when called with `geyser()`, no arguments). Geyser now has color palettes (pals and ggplot2), 
 custom plot height, optional points plotting, metadata-group based filtering, 
 and optional point text labeling. Point spread logic was changed from geom_beeswarm
 to geom_quasirandom as I found the former had some odd behavior with point spread

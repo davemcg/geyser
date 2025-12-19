@@ -17,45 +17,35 @@ License: CC0
 LazyData: false
 biocViews: Software, ShinyApps, GUI, GeneExpression
 Imports:
-    abind,
     bslib (>= 0.6.0),
     BiocStyle,
-    circlize,
     ComplexHeatmap,
+    cowplot,
     dplyr,
     DT,
     ggbeeswarm,
     ggplot2,
+    ggrepel,
+    ggh4x,
     htmltools,
     magrittr,
-    matrixStats,
+    pals,
+    RColorBrewer,
+    rlang,
+    R.utils,
     shiny,
+    S4Vectors,
     SummarizedExperiment,
     tibble,
     tidyselect,
-    tidyr,
-    shinyjs,
-    tidyverse,
-    yaml,
-    data.table,
-    scattermore,
-    ggrepel,
-    ggh4x,
-    pals,
-    cowplot,
-    rlang,
-    R.utils,
-    shinyFiles
+    tidyr
 Suggests:
     airway,
     knitr,
     DESeq2,
-    HDF5Array,
     rmarkdown,
     stringr,
-    testthat (>= 3.0.0),
-    Seurat,
-    SingleCellExperiment
+    testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Encoding: UTF-8
