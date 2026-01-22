@@ -1,6 +1,8 @@
 # geyser 1.00.2
 
 Geyser looks for information in the `$metadata` slot to print on the loading screen. 
+Faceting adds in user-selected rowData info (instead of being hardcoded to rowname). 
+Fixed bug in point labels where it was not adjusting to the y-axis jitter.
 
 # geyser 1.00.1
 
