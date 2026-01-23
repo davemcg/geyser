@@ -79,7 +79,7 @@ geyser <- function(rse = NULL,
           ), 
           if (!is.null(computer_data_dir) && length(available_files) > 0) {
             nav_panel("From Folder",
-                      selectInput("computer_file_select", "Available Datasets:", choices = available_files),
+                      selectizeInput("computer_file_select", "Available Datasets:", choices = available_files, options = list(dropdownParent = 'body')),
                       actionButton("load_computer_file_button", "Load Selected File", 
                                    icon = icon("hdd"), class = "btn-primary w-100")
             )
