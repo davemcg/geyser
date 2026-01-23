@@ -103,7 +103,7 @@ geyser <- function(rse = NULL,
         
         accordion(
           multiple = TRUE,
-          open = "Grouping and Features",
+          open = c("Grouping and Features", "Group Filtering"),
           accordion_panel(
             "Grouping and Features",
             selectizeInput("groupings", "Sample Grouping(s):", choices = NULL, multiple = TRUE),
@@ -146,7 +146,11 @@ geyser <- function(rse = NULL,
     rv <- reactiveValues(
       rse_object = rse,
       data_source_name = if (!is.null(rse)) "pre-loaded data" else NULL,
-      pending_config = NULL  # Store config to apply after feature_col updates
+      pending_config = NULL,  # Store config to apply after feature_col updates
+      pending_group_filters = NULL,  # Store group filters to apply after UI is created
+      pending_sample_filter = NULL,  # Store sample filter rows to apply
+      clear_group_filters = FALSE,  # Flag to clear group filters
+      clear_sample_filter = FALSE  # Flag to clear sample filter
     )
     
     # --- Helper Function to Apply Config ---
@@ -164,6 +168,17 @@ geyser <- function(rse = NULL,
         if (!is.null(config$feature_col)) {
           updateSelectizeInput(session, "feature_col", selected = config$feature_col)
         }
+      }
+      
+      # Apply group filters
+      if (!is.null(config$group_filters)) {
+        # Store group filters to apply after dynamic inputs are created
+        rv$pending_group_filters <- config$group_filters
+      }
+      
+      # Apply sample filtering (row selections in the table)
+      if (!is.null(config$sample_filter_rows)) {
+        rv$pending_sample_filter <- config$sample_filter_rows
       }
     }
     
@@ -185,7 +200,22 @@ geyser <- function(rse = NULL,
     output$config_download <- downloadHandler(
       filename = function() { paste0("geyser_config_", Sys.Date(), ".yaml") },
       content = function(file) {
-        yaml::write_yaml(list(
+        # Collect group filters
+        group_filters <- list()
+        if (!is.null(input$groupings) && length(input$groupings) > 0) {
+          for (g in input$groupings) {
+            filter_input_id <- paste0("dynamic_filter_", g)
+            filter_value <- input[[filter_input_id]]
+            if (!is.null(filter_value) && length(filter_value) > 0) {
+              group_filters[[g]] <- as.character(filter_value)
+            }
+          }
+        }
+        
+        # Get selected rows from sample filtering table
+        selected_rows <- input$table_rows_selected
+        
+        config_list <- list(
           groupings = input$groupings,
           feature_col = input$feature_col,
           features = input$features,
@@ -193,7 +223,23 @@ geyser <- function(rse = NULL,
           color_by = input$color_by,
           color_palette = input$color_palette,
           label_by = input$label_by
-        ), file)
+        )
+        
+        # Always add group_filters (empty string if none)
+        if (length(group_filters) > 0) {
+          config_list$group_filters <- group_filters
+        } else {
+          config_list$group_filters <- ""
+        }
+        
+        # Always add sample_filter_rows (empty string if none)
+        if (!is.null(selected_rows) && length(selected_rows) > 0) {
+          config_list$sample_filter_rows <- as.integer(selected_rows)
+        } else {
+          config_list$sample_filter_rows <- ""
+        }
+        
+        yaml::write_yaml(config_list, file)
       }
     )
     
@@ -250,7 +296,9 @@ geyser <- function(rse = NULL,
           nav_panel("Heatmap",
                     layout_columns(fill = FALSE,
                                    checkboxInput("col_clust", label = "Cluster Columns", value = TRUE),
-                                   checkboxInput("row_clust", label = "Cluster Rows", value = TRUE)),
+                                   checkboxInput("row_clust", label = "Cluster Rows", value = TRUE),
+                                   radioButtons("heatmap_axis", label = "Assign Row Axis: ", choices = c("Feature", "Sample"), selected = "Feature", inline = TRUE ),
+                                   checkboxInput("collapse_samples", label = "Collapse Samples (mean)", value = FALSE)),
                     actionButton('hm_plot_button','Draw Heatmap'),
                     plotOutput("hm_plot",height = '100%')
           )
@@ -311,6 +359,11 @@ geyser <- function(rse = NULL,
                            selected = if ('counts' %in% names(assays(rv$rse_object))) {'counts'} else {names(assays(rv$rse_object))[1]}, server = TRUE)
       updateSelectizeInput(session, 'color_by', choices = c("", colnames(colData(rv$rse_object))), selected = '', server = TRUE)
       updateSelectizeInput(session, 'label_by', choices = c("", colnames(colData(rv$rse_object))), selected = '', server = TRUE)
+      
+      # After updating choices, check for and apply embedded config
+      shinyjs::delay(300, {
+        apply_embedded_config(isolate(rv$rse_object), session, rv)
+      })
     })
     
     observeEvent(input$feature_col, {
@@ -358,9 +411,26 @@ geyser <- function(rse = NULL,
     output$dynamic_group_filters_ui <- renderUI({
       req(rv$rse_object, length(input$groupings) > 0)
       filter_inputs <- lapply(input$groupings, function(group_col) {
-        choices <- colData(rv$rse_object)[[group_col]] %>% as.character() %>% unique() %>% sort()
-        selectizeInput(inputId = paste0("dynamic_filter_", group_col), label = paste("Filter by", group_col, ":"), choices = choices, multiple = TRUE, selected = NULL)
+        # Get values and handle NAs explicitly
+        values <- colData(rv$rse_object)[[group_col]]
+        
+        # Convert to character and replace NA with a string representation
+        char_values <- as.character(values)
+        char_values[is.na(values)] <- "NA"
+        
+        # Get unique choices and sort (NA will be sorted alphabetically)
+        choices <- unique(char_values) %>% sort()
+        
+        selectizeInput(inputId = paste0("dynamic_filter_", group_col), 
+                       label = paste("Filter by", group_col, ":"), 
+                       choices = choices, 
+                       multiple = TRUE, 
+                       selected = NULL)
       })
+      
+      # Apply pending group filters using helper function
+      apply_pending_group_filters(rv, input, session)
+      
       tagList(filter_inputs)
     })
     
@@ -374,7 +444,22 @@ geyser <- function(rse = NULL,
         selected_values <- input[[paste0("dynamic_filter_", g)]]
         if (!is.null(selected_values) && length(selected_values) > 0) {
           any_filter_active <- TRUE
-          filtered_cd <- filtered_cd %>% dplyr::filter(.data[[g]] %in% selected_values)
+          
+          # Handle "NA" string by converting back to actual NA for filtering
+          if ("NA" %in% selected_values) {
+            # Include rows where value is NA OR in the selected non-NA values
+            other_values <- selected_values[selected_values != "NA"]
+            if (length(other_values) > 0) {
+              filtered_cd <- filtered_cd %>% 
+                dplyr::filter(is.na(.data[[g]]) | .data[[g]] %in% other_values)
+            } else {
+              # Only "NA" is selected
+              filtered_cd <- filtered_cd %>% dplyr::filter(is.na(.data[[g]]))
+            }
+          } else {
+            # No "NA" selected, normal filtering
+            filtered_cd <- filtered_cd %>% dplyr::filter(.data[[g]] %in% selected_values)
+          }
         }
       }
       if (any_filter_active) {
@@ -415,7 +500,7 @@ geyser <- function(rse = NULL,
           return(input$custom_plot_height)
         } else {
           req(hm_plot_reactive())
-          return(max(400, 0.7 * hm_plot_reactive()$grouping_length))
+          return(max(400, 0.3 * hm_plot_reactive()$grouping_length))
         }
       })
     })
@@ -426,6 +511,9 @@ geyser <- function(rse = NULL,
         select('rse_sample_id', any_of(input$groupings)) %>%
         DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 15, dom = 'tp'), filter = list(position = 'top', clear = FALSE))
     }, server = TRUE)
+    
+    # Apply pending sample filter using helper function
+    apply_pending_sample_filter(rv, input)
     
     proxy <- DT::dataTableProxy('table')
     observeEvent(input$clear_colData_row_selections, { proxy %>% DT::selectRows(NULL) })

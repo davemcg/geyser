@@ -6,7 +6,7 @@
 #'
 #' @import SummarizedExperiment
 #' @importFrom ComplexHeatmap Heatmap
-#' @importFrom dplyr filter left_join mutate pull select row_number 
+#' @importFrom dplyr filter left_join mutate pull select row_number summarise group_by
 #' @importFrom magrittr "%>%"
 #' @import tibble 
 #' @importFrom tidyselect all_of
@@ -55,8 +55,7 @@
     stop()
   }
   
-  # --- Feature Selection Logic ---
-  # Safety check for empty rowData or specific column selection
+  # --- Feature Selection ---
   if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     feature_logical <- rowData(rse)[,input$feature_col] %in% features
   } else {
@@ -69,7 +68,6 @@
     rownames_to_column('rse_row_id') %>% 
     pivot_longer(-rse_row_id, values_to = 'counts', names_to = 'sample_unique_id')
   
-  # Matches the facet title logic in geyser_exp_plot.R to handle duplicate symbols
   if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     row_meta <- rowData(rse) %>% 
       data.frame() %>% 
@@ -83,7 +81,7 @@
     pdata <- pdata %>% mutate(user_selected_feature = rse_row_id)
   }
   
-  # Join with sample metadata (colData)
+  # Join with sample metadata
   pfdata <- pdata %>%
     left_join(colData((rse)) %>%
                 data.frame() %>% 
@@ -95,7 +93,7 @@
     pfdata <- pfdata %>% filter(rowid %in% input$table_rows_selected)
   }
   
-  # optional (but set as default) log2 scaling
+  # Apply log2 scaling before averaging (standard practice)
   if (input$expression_scale){
     pfdata$counts <- log2(pfdata$counts + 1)
     lab_text <- "scale(log2(c))"
@@ -103,6 +101,7 @@
     lab_text <- "scale(c)"
   }
   
+  # Define grouping
   if (length(groupings) == 1){
     pfdata$group <- pfdata[,groupings] %>% pull(1)
   } else {
@@ -110,34 +109,76 @@
       unite("group", all_of(groupings), remove = FALSE, sep = " | ")
   }
   
-  pfdf <- pfdata %>%
-    select(user_selected_feature, sample_unique_id, counts) %>%
-    pivot_wider(names_from = sample_unique_id, values_from = counts)
+  # --- New Collapse Logic ---
+  if (!is.null(input$collapse_samples) && input$collapse_samples) {
+    # Average across groups
+    pfdf_long <- pfdata %>%
+      group_by(user_selected_feature, group) %>%
+      summarise(counts = mean(counts, na.rm = TRUE), .groups = "drop")
+    
+    # Pivot wider using 'group' as the new columns instead of 'sample_unique_id'
+    pfdf <- pfdf_long %>%
+      pivot_wider(names_from = group, values_from = counts)
+    
+    col_labels <- colnames(pfdf)[-1]
+    pfdf <- data.frame(pfdf)
+    row.names(pfdf) <- pfdf$user_selected_feature
+    pfdf <- pfdf[,-1]
+    
+    # Heatmap data based on collapsed groups
+    hm_data <- t(scale(t(as.matrix(pfdf))))
+    # For collapsed views, we don't need group splitting (since columns ARE the groups)
+    group_split_vec <- NULL
+    
+  } else {
+    # Standard: individual samples
+    pfdf <- pfdata %>%
+      select(user_selected_feature, sample_unique_id, counts) %>%
+      pivot_wider(names_from = sample_unique_id, values_from = counts)
+    
+    col_labels <- colnames(pfdf)[-1]
+    pfdf <- data.frame(pfdf)
+    row.names(pfdf) <- pfdf$user_selected_feature
+    pfdf <- pfdf[,-1]
+    
+    hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()])))
+    group_split_vec <- pfdata %>% pull(group) %>% head(ncol(hm_data))
+  }
   
-  col_labels <- colnames(pfdf)[-1]
-  pfdf <- data.frame(pfdf)
-  row.names(pfdf) <- pfdf$user_selected_feature
-  pfdf <- pfdf[,-1]
-  
-  # Scaling across samples
-  hm_data <- t(scale(t(pfdf[,pfdata$sample_unique_id %>% unique()])))
-  
+  # --- Clustering Logic ---
   row_clustering <- input$row_clust
   if (min(rowSums(hm_data) <= 1, na.rm = TRUE)){
     row_clustering <- FALSE
   }
   
-  # Create Heatmap object
-  hm <- Heatmap(hm_data,
-                column_split = pfdata %>%  pull(group) %>% head(ncol(hm_data)),
-                column_labels = col_labels,
-                cluster_columns = input$col_clust,
-                cluster_rows = row_clustering,
-                name = lab_text,
-                column_title = paste0("geyser\n", data_source_name),
-                column_title_side = "bottom",
-                column_title_gp = gpar(fontsize = 10, fontface = "italic")
-  )
+  # --- Final Plotting ---
+  if (!is.null(input$heatmap_axis) && input$heatmap_axis == 'Sample') {
+    hm <- Heatmap(t(hm_data),
+                  row_split = group_split_vec,
+                  row_labels = col_labels,
+                  cluster_rows = input$col_clust,
+                  cluster_columns = row_clustering,
+                  name = lab_text,
+                  column_title = paste0("geyser\n", data_source_name),
+                  column_title_side = "bottom",
+                  column_title_gp = gpar(fontsize = 12, 
+                                         hjust = 1, 
+                                         x = 1)
+    )
+  } else {
+    hm <- Heatmap(hm_data,
+                  column_split = group_split_vec,
+                  column_labels = col_labels,
+                  cluster_columns = input$col_clust,
+                  cluster_rows = row_clustering,
+                  name = lab_text,
+                  column_title = paste0("geyser\n", data_source_name),
+                  column_title_side = "bottom",
+                  column_title_gp = gpar(fontsize = 12,
+                                         hjust = 1, 
+                                         x = 1)
+    )
+  }
   
   output <- list()
   output$plot <- hm
