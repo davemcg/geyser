@@ -21,29 +21,8 @@ geyser(
 
 \item{secondary_color}{The plot action button color}
 
-\item{computer_data_dir}{Optional folder path to existing SummarizedExperiment RDS files. 
-When given, the GUI will show the RDS files.}
-}
-\value{
-Shiny app
+\item{computer_data_dir}{Optional folder path to existing SummarizedExperiment RDS files.}
 }
 \description{
 Run shiny app to use SummarizedExperiment object to display genomics data
-}
-\details{
-Shiny app uses the rowData rownames to define the genes. The colData field is made
-fully available to make custom plot groupings.
-}
-\examples{
-
-if (interactive()){
-  load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
-  geyser(tiny_rse)
-  # Or launch with no RSE to see the file upload screen
-  # geyser()
-}
-
-}
-\author{
-David McGaughey
 }
