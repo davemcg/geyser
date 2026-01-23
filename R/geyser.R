@@ -19,7 +19,7 @@
 #' @importFrom shiny reactive reactiveVal renderPlot renderText req
 #' @importFrom shiny selectInput showModal tagList tags updateSelectInput
 #' @importFrom shiny validate verbatimTextOutput showNotification removeNotification
-#' @importFrom shiny nearPoints reactiveValues callModule fileInput
+#' @importFrom shiny nearPoints reactiveValues callModule fileInput renderPrint
 #' @importFrom shiny renderUI uiOutput observe withProgress incProgress
 #' @importFrom tidyr unite
 #' @importFrom tidyselect all_of
@@ -262,7 +262,7 @@ geyser <- function(rse = NULL,
             card_header("RSE Metadata", class = 'bg-dark'),
             card_body(
               if (length(meta_list) > 0) {
-                DT::datatable(t(data.frame(S4Vectors::metadata(rv$rse_object))))
+                verbatimTextOutput("meta_raw")
               } else {
                 p("No metadata available in this SummarizedExperiment object.")
               }
@@ -524,8 +524,14 @@ geyser <- function(rse = NULL,
         DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 25), filter = list(position = 'top', clear = FALSE), selection = 'none')
     }, server = TRUE)
     
+    
+    output$meta_raw <- renderPrint({
+      S4Vectors::metadata(rv$rse_object)
+    })
+    
     session$onSessionEnded(function() { stopApp() })
   }
+
   
   app <- shinyApp(ui, server)
   return(app)
