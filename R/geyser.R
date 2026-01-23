@@ -23,36 +23,16 @@
 #' @importFrom shiny renderUI uiOutput observe withProgress incProgress
 #' @importFrom tidyr unite
 #' @importFrom tidyselect all_of
+#' @importFrom shinyjs useShinyjs delay
+#' @import yaml
 #' @import pals
 #' 
 #' @param rse SummarizedExperiment object. If NULL (the default), the app will start with a file upload screen.
 #' @param app_name Title name that goes on the top left of the Shiny app
 #' @param primary_color The title bar color
 #' @param secondary_color The plot action button color
-#' @param computer_data_dir Optional folder path to existing SummarizedExperiment RDS files. 
-#' When given, the GUI will show the RDS files.
+#' @param computer_data_dir Optional folder path to existing SummarizedExperiment RDS files.
 #'
-#' @details
-#'
-#' Shiny app uses the rowData rownames to define the genes. The colData field is made
-#' fully available to make custom plot groupings.
-#'
-#' @author David McGaughey
-#'
-#' @returns 
-#' 
-#' Shiny app
-#' 
-#' @examples
-#'
-#' if (interactive()){
-#'   load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
-#'   geyser(tiny_rse)
-#'   # Or launch with no RSE to see the file upload screen
-#'   # geyser()
-#' }
-#'
-
 geyser <- function(rse = NULL, 
                    app_name = "geyser",
                    primary_color = "#3A5836",
@@ -62,19 +42,26 @@ geyser <- function(rse = NULL,
   # Set max file upload size to 1GB
   options(shiny.maxRequestSize = 1000*1024^2)
   
-  # Only attempt to list "pre-loaded" files if a path is provided and exists
   available_files <- if (!is.null(computer_data_dir) && dir.exists(computer_data_dir)) { 
     list.files(computer_data_dir, pattern = "\\.rds$", ignore.case = TRUE) 
   } else {
-    character(0) # Returns empty vector if NULL or path doesn't exist 
+    character(0) 
+  }
+  
+  # Identify available preset YAML files in a 'presets' directory
+  preset_choices <- if (dir.exists("presets")) {
+    list.files("presets", pattern = "\\.yaml$|\\.yml$")
+  } else {
+    NULL
   }
   
   ui <- page_navbar(
-    id = "main_nav", # ID for observing active tab
+    id = "main_nav",
     title = app_name,
     theme = theme_ui(primary_color = primary_color, 
                      secondary_color = secondary_color),
     header = tagList(
+      useShinyjs(), # Enable shinyjs for delays
       tags$style(HTML('table.dataTable tr.active td, table.dataTable tr.active 
                       {background-color: #3A5836 !important;}')),
       tags$style(HTML('table.dataTable tr.selected td, table.dataTable td.selected 
@@ -82,33 +69,38 @@ geyser <- function(rse = NULL,
     ),
     sidebar = sidebar(
       width = 380,
-      # Conditionally show data loading controls
       conditionalPanel(
         condition = "input.main_nav == 'Data Overview'",
         h4("Load Data"),
         navset_card_tab(
           id = "load_method",
           nav_panel("Upload",
-                    p(em("Upload an .rds file containing a SummarizedExperiment object.")),
                     fileInput("rse_upload", "Upload .rds File:", accept = ".rds")
           ), 
           if (!is.null(computer_data_dir) && length(available_files) > 0) {
             nav_panel("From Folder",
-                      p(em("Select a dataset")),
-                      selectInput("computer_file_select", 
-                                  "Available Datasets:", 
-                                  choices = available_files),
-                      br(),
+                      selectInput("computer_file_select", "Available Datasets:", choices = available_files),
                       actionButton("load_computer_file_button", "Load Selected File", 
                                    icon = icon("hdd"), class = "btn-primary w-100")
             )
           }
         )
       ),
-      # Conditionally show plotting controls
       conditionalPanel(
         condition = "input.main_nav == 'Plotting'",
         h4("Plot Parameters"),
+        
+        # --- Config & Presets Card ---
+        card(
+          h5("Config & Presets"),
+          if (!is.null(preset_choices) && length(preset_choices) > 0) {
+            selectInput("config_preset", "Choose a Preset:", choices = c("None" = "", preset_choices))
+          },
+          fileInput("config_upload", "Upload Config (.yaml):", accept = c(".yaml", ".yml")),
+          downloadButton("config_download", "Download Current Config", class = "btn-outline-secondary btn-sm w-100"),
+          style = "margin-bottom: 10px;"
+        ),
+        
         accordion(
           multiple = TRUE,
           open = "Grouping and Features",
@@ -140,37 +132,72 @@ geyser <- function(rse = NULL,
         )
       )
     ),
-    nav_panel(
-      title = "Data Overview",
-      value = "Data Overview",
-      uiOutput("data_load_content")
-    ),
-    nav_panel(
-      title = "Plotting",
-      value = "Plotting",
-      uiOutput("plotting_content")
-    ),
+    nav_panel(title = "Data Overview", value = "Data Overview", uiOutput("data_load_content")),
+    nav_panel(title = "Plotting", value = "Plotting", uiOutput("plotting_content")),
     nav_spacer(),
     nav_menu(
-      title = "Info",
-      align = "right",
+      title = "Info", align = "right",
       quick_start_ui(),
-      nav_item(tags$a("Code Source (external link)", 
-                      href = "https://github.com/davemcg/geyser", 
-                      target = "_blank"))
+      nav_item(tags$a("Code Source (external link)", href = "https://github.com/davemcg/geyser", target = "_blank"))
     )
   )
   
   server <- function(input, output, session) {
-    
     rv <- reactiveValues(
       rse_object = rse,
-      data_source_name = if (!is.null(rse)) "pre-loaded data" else NULL
+      data_source_name = if (!is.null(rse)) "pre-loaded data" else NULL,
+      pending_config = NULL  # Store config to apply after feature_col updates
+    )
+    
+    # --- Helper Function to Apply Config ---
+    apply_config <- function(config) {
+      req(config)
+      if (!is.null(config$groupings)) updateSelectizeInput(session, "groupings", selected = config$groupings)
+      if (!is.null(config$slot)) updateSelectizeInput(session, "slot", selected = config$slot)
+      if (!is.null(config$color_by)) updateSelectizeInput(session, "color_by", selected = config$color_by)
+      if (!is.null(config$color_palette)) updateSelectInput(session, "color_palette", selected = config$color_palette)
+      if (!is.null(config$label_by)) updateSelectizeInput(session, "label_by", selected = config$label_by)
+      
+      # Store the config for the feature_col observer to use
+      if (!is.null(config$feature_col) || !is.null(config$features)) {
+        rv$pending_config <- config
+        if (!is.null(config$feature_col)) {
+          updateSelectizeInput(session, "feature_col", selected = config$feature_col)
+        }
+      }
+    }
+    
+    # --- Config Handlers ---
+    observeEvent(input$config_upload, {
+      req(input$config_upload)
+      config <- yaml::read_yaml(input$config_upload$datapath)
+      apply_config(config)
+      showNotification("External configuration applied.", type = "message")
+    })
+    
+    observeEvent(input$config_preset, {
+      req(input$config_preset != "")
+      config <- yaml::read_yaml(file.path("presets", input$config_preset))
+      apply_config(config)
+      showNotification(paste("Preset", input$config_preset, "applied."), type = "message")
+    })
+    
+    output$config_download <- downloadHandler(
+      filename = function() { paste0("geyser_config_", Sys.Date(), ".yaml") },
+      content = function(file) {
+        yaml::write_yaml(list(
+          groupings = input$groupings,
+          feature_col = input$feature_col,
+          features = input$features,
+          slot = input$slot,
+          color_by = input$color_by,
+          color_palette = input$color_palette,
+          label_by = input$label_by
+        ), file)
+      }
     )
     
     # ---- Dynamic UI Rendering ----
-    
-    # Render the content for the "Data Overview" tab
     output$data_load_content <- renderUI({
       if (is.null(rv$rse_object)) {
         card(
@@ -181,11 +208,8 @@ geyser <- function(rse = NULL,
           )
         )
       } else {
-        # Extract and display metadata list 
         meta_list <- S4Vectors::metadata(rv$rse_object)
-        
         tagList(
-          # New Metadata Card 
           card(
             full_screen = TRUE,
             min_height = "200px",
@@ -198,20 +222,15 @@ geyser <- function(rse = NULL,
               }
             )
           ),
-          
-          # colData card
           card(
             full_screen = TRUE,
             card_header("Full Sample Metadata (colData)", class = 'bg-dark'),
-            card_body(
-              DT::dataTableOutput("table_full", width = "100%", fill = FALSE)
-            )
+            card_body(DT::dataTableOutput("table_full", width = "100%", fill = FALSE))
           )
         )
       }
     })
     
-    # Render the content for the "Plotting" tab
     output$plotting_content <- renderUI({
       if (is.null(rv$rse_object)) {
         card(
@@ -240,8 +259,6 @@ geyser <- function(rse = NULL,
     })
     
     # ---- Data Loading Observers ----
-    
-    # Observer to handle the file upload
     observeEvent(input$rse_upload, {
       req(input$rse_upload)
       tryCatch({
@@ -257,20 +274,14 @@ geyser <- function(rse = NULL,
       })
     })
     
-    # Observer to handle loading a server-side file
     observeEvent(input$load_computer_file_button, {
       req(input$computer_file_select)
       file_path <- file.path(computer_data_dir, input$computer_file_select)
-      
       withProgress(message = paste("Loading", input$computer_file_select), value = 0, {
-        
         incProgress(0.3, detail = "Reading file from disk...")
-        
         tryCatch({
           loaded_rse <- readRDS(file_path)
-          
           incProgress(0.6, detail = "Validating SummarizedExperiment object...")
-          
           if (inherits(loaded_rse, "SummarizedExperiment")) {
             rv$rse_object <- loaded_rse
             rv$data_source_name <- input$computer_file_select
@@ -285,128 +296,102 @@ geyser <- function(rse = NULL,
     })
     
     # ---- Core Application Logic ----
-    
-    # Observer to populate inputs and perform checks once the RSE object is available
     observeEvent(rv$rse_object, {
       req(rv$rse_object)
-      
-      # error checking for input rse -----
       if ((colnames(rv$rse_object) %>% grep("^\\d", .) %>% length()) > 0){
         showModal(modalDialog(title = "Column name error!",
                               "R hates column names that begin with a digit!
                               Close this app and edit the SummarizedExperiment object
                               `colnames` to not begin with numbers please.",
-                              easyClose = FALSE,
-                              footer = NULL))
+                              easyClose = FALSE, footer = NULL))
       }
-      
-      # Populate inputs -----
-      updateSelectizeInput(session, 'groupings',
-                           choices = colnames(colData(rv$rse_object)) %>% sort(),
-                           server = TRUE)
-      
-      updateSelectizeInput(session, 'feature_col',
-                           label = 'Assay Feature: ',
-                           choices = c("row names", colnames(rowData(rv$rse_object))),
-                           selected = 'row names',
-                           server = TRUE)
-      
-      updateSelectizeInput(session, 'slot',
-                           choices = assays(rv$rse_object) %>% names() %>% sort(),
-                           selected = if ('counts' %in% names(assays(rv$rse_object))) {'counts'} 
-                           else {names(assays(rv$rse_object))[1]},
-                           server = TRUE)
-      
-      updateSelectizeInput(session, 'color_by',
-                           choices = c("", colnames(colData(rv$rse_object))),
-                           selected = '',
-                           server = TRUE)
-      
-      updateSelectizeInput(session, 'label_by',
-                           choices = c("", colnames(colData(rv$rse_object))),
-                           selected = '',
-                           server = TRUE)
+      updateSelectizeInput(session, 'groupings', choices = colnames(colData(rv$rse_object)) %>% sort(), server = TRUE)
+      updateSelectizeInput(session, 'feature_col', choices = c("row names", colnames(rowData(rv$rse_object))), selected = 'row names', server = TRUE)
+      updateSelectizeInput(session, 'slot', choices = assays(rv$rse_object) %>% names() %>% sort(),
+                           selected = if ('counts' %in% names(assays(rv$rse_object))) {'counts'} else {names(assays(rv$rse_object))[1]}, server = TRUE)
+      updateSelectizeInput(session, 'color_by', choices = c("", colnames(colData(rv$rse_object))), selected = '', server = TRUE)
+      updateSelectizeInput(session, 'label_by', choices = c("", colnames(colData(rv$rse_object))), selected = '', server = TRUE)
     })
     
     observeEvent(input$feature_col, {
       req(rv$rse_object, input$feature_col)
+      
+      # Update the choices
       if (input$feature_col == 'row names'){
-        updateSelectizeInput(session, 'features', 
-                             label = "Features:",
-                             choices = row.names(rv$rse_object), 
-                             selected = NULL, 
-                             server = TRUE)
+        available <- row.names(rv$rse_object)
       } else {
-        the_col <- input$feature_col
+        available <- as.character(rowData(rv$rse_object)[,input$feature_col])
+      }
+      
+      # Check if we have a pending config with features to select
+      has_pending_features <- !is.null(rv$pending_config) && !is.null(rv$pending_config$features)
+      
+      if (has_pending_features) {
+        # If we're applying a config, we need to include the selected features in the initial options
+        # so they're available on the client side (important for server-side selectize)
+        features_to_select <- as.character(isolate(rv$pending_config$features))
+        valid_features <- intersect(features_to_select, available)
+        
+        # Update with the valid features pre-selected
         updateSelectizeInput(session, 'features', 
-                             label = "Features:",
-                             choices = rowData(rv$rse_object)[,the_col],
-                             selected = NULL, 
+                             choices = available, 
+                             selected = valid_features, 
                              server = TRUE)
+        
+        # Warn about invalid features
+        invalid_features <- setdiff(features_to_select, available)
+        if (length(invalid_features) > 0) {
+          showNotification(
+            paste("Warning: Features not found:", paste(invalid_features, collapse = ", ")),
+            type = "warning",
+            duration = 5
+          )
+        }
+        
+        rv$pending_config <- NULL  # Clear the pending config
+      } else {
+        # Normal update without selection
+        updateSelectizeInput(session, 'features', choices = available, selected = NULL, server = TRUE)
       }
     })
     
-    # Render the dynamic filter controls UI
     output$dynamic_group_filters_ui <- renderUI({
       req(rv$rse_object, length(input$groupings) > 0)
-      
       filter_inputs <- lapply(input$groupings, function(group_col) {
         choices <- colData(rv$rse_object)[[group_col]] %>% as.character() %>% unique() %>% sort()
-        selectizeInput(inputId = paste0("dynamic_filter_", group_col),
-                       label = paste("Filter by", group_col, ":"),
-                       choices = choices,
-                       multiple = TRUE,
-                       selected = NULL)
+        selectizeInput(inputId = paste0("dynamic_filter_", group_col), label = paste("Filter by", group_col, ":"), choices = choices, multiple = TRUE, selected = NULL)
       })
       tagList(filter_inputs)
     })
     
-    # Reactive for RSE object filtered by the intersection of dynamic selections
     rse_filtered_by_group <- reactive({
       rse <- rv$rse_object
       req(rse)
-      
       active_groupings <- input$groupings
       filtered_cd <- colData(rse) %>% as.data.frame()
       any_filter_active <- FALSE
-      
       for (g in active_groupings) {
-        filter_input_id <- paste0("dynamic_filter_", g)
-        selected_values <- input[[filter_input_id]]
-        
+        selected_values <- input[[paste0("dynamic_filter_", g)]]
         if (!is.null(selected_values) && length(selected_values) > 0) {
           any_filter_active <- TRUE
-          filtered_cd <- filtered_cd %>%
-            dplyr::filter(.data[[g]] %in% selected_values)
+          filtered_cd <- filtered_cd %>% dplyr::filter(.data[[g]] %in% selected_values)
         }
       }
-      
       if (any_filter_active) {
         samples_to_keep <- rownames(filtered_cd)
         if (length(samples_to_keep) == 0) {
-          showModal(modalDialog(
-            title = "No Samples Found",
-            "Zero samples left, please revise the filtering",
-            easyClose = TRUE,
-            footer = NULL
-          ))
+          showModal(modalDialog(title = "No Samples Found", "Zero samples left, please revise the filtering", easyClose = TRUE, footer = NULL))
         }
         return(rse[, samples_to_keep])
-      } else {
-        return(rse)
-      }
+      } else { return(rse) }
     })
     
-    # expression plot ----
     exp_plot_reactive <- eventReactive(input$exp_plot_button, {
       req(rse_filtered_by_group())
       .exp_plot(input, rse_filtered_by_group(), rv$data_source_name)
     })
     
-    output$exp_plot <- renderPlot({
-      exp_plot_reactive()$plot
-    },
-    height = function() {
+    output$exp_plot <- renderPlot({ exp_plot_reactive()$plot }, height = function() {
       input$exp_plot_button 
       isolate({
         if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
@@ -418,16 +403,12 @@ geyser <- function(rse = NULL,
       })
     })
     
-    # hm plot -----
     hm_plot_reactive <- eventReactive(input$hm_plot_button, {
       req(rse_filtered_by_group())
       .hm_plot(input, rse_filtered_by_group(), rv$data_source_name)
     })
     
-    output$hm_plot <- renderPlot({
-      draw(hm_plot_reactive()$plot)
-    },
-    height = function() {
+    output$hm_plot <- renderPlot({ draw(hm_plot_reactive()$plot) }, height = function() {
       input$hm_plot_button 
       isolate({
         if (!is.null(input$custom_plot_height) && !is.na(input$custom_plot_height) && input$custom_plot_height >= 200) {
@@ -439,44 +420,23 @@ geyser <- function(rse = NULL,
       })
     })
     
-    # metdata info ----
-    output$metadata_display <- renderPrint({
-      req(rv$rse_object)
-      metadata(rv$rse_object)
-    })
-    
-    # sample data table -----
     output$table <- DT::renderDataTable({
       req(rse_filtered_by_group())
-      colData(rse_filtered_by_group()) %>%
-        data.frame() %>% 
-        rownames_to_column('rse_sample_id') %>% 
+      colData(rse_filtered_by_group()) %>% data.frame() %>% rownames_to_column('rse_sample_id') %>% 
         select('rse_sample_id', any_of(input$groupings)) %>%
-        DT::datatable(rownames= FALSE,
-                      options = list(autoWidth = TRUE, pageLength = 15, dom = 'tp'),
-                      filter = list(position = 'top', clear = FALSE))
+        DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 15, dom = 'tp'), filter = list(position = 'top', clear = FALSE))
     }, server = TRUE)
     
     proxy <- DT::dataTableProxy('table')
-    observeEvent(input$clear_colData_row_selections, {
-      proxy %>% DT::selectRows(NULL)
-    })
+    observeEvent(input$clear_colData_row_selections, { proxy %>% DT::selectRows(NULL) })
     
-    # sample data table full -----
     output$table_full <- DT::renderDataTable({
       req(rv$rse_object)
-      colData(rv$rse_object) %>%
-        data.frame() %>% 
-        rownames_to_column('rse_sample_id') %>% 
-        DT::datatable(rownames= FALSE,
-                      options = list(autoWidth = TRUE, pageLength = 25),
-                      filter = list(position = 'top', clear = FALSE),
-                      selection = 'none')
+      colData(rv$rse_object) %>% data.frame() %>% rownames_to_column('rse_sample_id') %>% 
+        DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 25), filter = list(position = 'top', clear = FALSE), selection = 'none')
     }, server = TRUE)
     
-    session$onSessionEnded(function() {
-      stopApp()
-    })
+    session$onSessionEnded(function() { stopApp() })
   }
   
   app <- shinyApp(ui, server)

@@ -29,11 +29,13 @@ Imports:
     rlang,
     R.utils,
     shiny,
+    shinyjs,
     S4Vectors,
     SummarizedExperiment,
     tibble,
     tidyselect,
-    tidyr
+    tidyr,
+    yaml
 Suggests:
     airway,
     knitr,
