@@ -20,6 +20,17 @@ load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
 geyser(tiny_rse,'Test RSE')
 ```
 
+## Version 1.0 Updates
+
+  - More flexibility for file import
+    - Can load RDS files from the GUI
+    - Can give a folder when starting to show available RDS files (`geyser()) in a drop down menu
+  - More sample filtering options 
+  - More color palettes
+  - Optional point labeling
+  - Custom plot height
+  - Can select which rowData slot to plot with (e.g. for RSE with ensembl or gene symbols)
+    
 ## Use [recount3](https://www.bioconductor.org/packages/devel/bioc/vignettes/recount3/inst/doc/recount3-quickstart.html) to make a SE object
 ```
 library(recount3)

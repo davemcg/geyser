@@ -5,39 +5,33 @@
 \title{geyser}
 \usage{
 geyser(
-  rse,
+  rse = NULL,
   app_name = "geyser",
   primary_color = "#3A5836",
-  secondary_color = "#d5673e"
+  secondary_color = "#d5673e",
+  computer_data_dir = NULL
 )
 }
 \arguments{
-\item{rse}{SummarizedExperiment object}
+\item{rse}{SummarizedExperiment object. If NULL (the default), the app will start with a file upload screen.}
 
 \item{app_name}{Title name that goes on the top left of the Shiny app}
 
 \item{primary_color}{The title bar color}
 
 \item{secondary_color}{The plot action button color}
+
+\item{computer_data_dir}{Optional folder path to existing SummarizedExperiment RDS files.}
 }
 \value{
-Shiny app
+A Shiny app object
 }
 \description{
 Run shiny app to use SummarizedExperiment object to display genomics data
 }
-\details{
-Shiny app uses the rowData rownames to define the genes. The colData field is made
-fully available to make custom plot groupings.
-}
 \examples{
-
-if (interactive()){
+if (interactive()) {
   load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
-  geyser(tiny_rse)
+  geyser(tiny_rse, "Test RSE")
 }
-
-}
-\author{
-David McGaughey
 }
