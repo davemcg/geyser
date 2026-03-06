@@ -46,10 +46,10 @@ geyser <- function(rse = NULL,
                    secondary_color = "#d5673e",
                    computer_data_dir = NULL) {
   
-  shiny::addResourcePath(
-    prefix = "geyser-assets", 
-    directoryPath = system.file("www", package = "geyser")
-  )
+  # shiny::addResourcePath(
+  #   prefix = "geyser-assets", 
+  #   directoryPath = system.file("www", package = "geyser")
+  # )
   
   # Set max file upload size to 1GB
   options(shiny.maxRequestSize = 1000*1024^2)
@@ -69,10 +69,11 @@ geyser <- function(rse = NULL,
   
   ui <- page_navbar(
     id = "main_nav",
-    title = span(
-      tags$img(src = "geyser-assets/logo.20260123.png", height = "40px", style = "margin-right: 10px;"),
-      app_name
-    ),
+    # title = span(
+    #   tags$img(src = "geyser-assets/logo.20260123.png", height = "40px", style = "margin-right: 10px;"),
+    #   app_name
+    # ),
+    title = app_name,
     theme = theme_ui(primary_color = primary_color, 
                      secondary_color = secondary_color),
     header = tagList(
