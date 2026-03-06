@@ -454,7 +454,11 @@ geyser <- function(rse = NULL,
       rse <- rv$rse_object
       req(rse)
       active_groupings <- input$groupings
-      filtered_cd <- colData(rse) %>% as.data.frame(check.names = FALSE)
+      
+      filtered_cd <- colData(rse) %>% 
+        as.data.frame() %>%
+        dplyr::mutate(original_rse_index = dplyr::row_number())
+      
       any_filter_active <- FALSE
       for (g in active_groupings) {
         selected_values <- input[[paste0("dynamic_filter_", g)]]
@@ -479,7 +483,8 @@ geyser <- function(rse = NULL,
         }
       }
       if (any_filter_active) {
-        samples_to_keep <- rownames(filtered_cd)
+        samples_to_keep <- filtered_cd$original_rse_index
+        
         if (length(samples_to_keep) == 0) {
           showModal(modalDialog(title = "No Samples Found", "Zero samples left, please revise the filtering", easyClose = TRUE, footer = NULL))
         }
