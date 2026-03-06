@@ -23,6 +23,15 @@ geyser(
 
 \item{computer_data_dir}{Optional folder path to existing SummarizedExperiment RDS files.}
 }
+\value{
+A Shiny app object
+}
 \description{
 Run shiny app to use SummarizedExperiment object to display genomics data
+}
+\examples{
+if (interactive()) {
+  load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
+  geyser(tiny_rse, "Test RSE")
+}
 }

@@ -64,13 +64,13 @@
   
   # Pull feature counts
   pdata <- assay((rse), input$slot)[feature_logical, ,drop = FALSE] %>%
-    data.frame() %>% 
+    data.frame(check.names = FALSE) %>% 
     rownames_to_column('rse_row_id') %>% 
     pivot_longer(-rse_row_id, values_to = 'counts', names_to = 'sample_unique_id')
   
   if (input$feature_col != 'row names' && ncol(rowData(rse)) > 0) {
     row_meta <- rowData(rse) %>% 
-      data.frame() %>% 
+      data.frame(check.names = FALSE) %>% 
       rownames_to_column('rse_row_id') %>% 
       select(rse_row_id, !!sym(input$feature_col))
     
@@ -84,7 +84,7 @@
   # Join with sample metadata
   pfdata <- pdata %>%
     left_join(colData((rse)) %>%
-                data.frame() %>% 
+                data.frame(check.names = FALSE) %>% 
                 rownames_to_column('sample_unique_id') %>% 
                 mutate(rowid = row_number()),
               by = 'sample_unique_id')
@@ -121,7 +121,7 @@
       pivot_wider(names_from = group, values_from = counts)
     
     col_labels <- colnames(pfdf)[-1]
-    pfdf <- data.frame(pfdf)
+    pfdf <- data.frame(pfdf, check.names = FALSE)
     row.names(pfdf) <- pfdf$user_selected_feature
     pfdf <- pfdf[,-1]
     
@@ -137,7 +137,7 @@
       pivot_wider(names_from = sample_unique_id, values_from = counts)
     
     col_labels <- colnames(pfdf)[-1]
-    pfdf <- data.frame(pfdf)
+    pfdf <- data.frame(pfdf, check.names = FALSE)
     row.names(pfdf) <- pfdf$user_selected_feature
     pfdf <- pfdf[,-1]
     

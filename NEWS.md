@@ -1,3 +1,8 @@
+# geyser 1.00.4
+
+* Add check.names = FALSE to all data.frame() calls to better handle special characters. 
+* The heatmap view defaults to mean grouping by the user selected metadata values
+
 # geyser 1.00.3
 
 * New config capability to pre-select plotting options (e.g. genes, assay slot, sample groupings). 
