@@ -33,11 +33,23 @@
 #' @param secondary_color The plot action button color
 #' @param computer_data_dir Optional folder path to existing SummarizedExperiment RDS files.
 #'
+#' @return A Shiny app object
+#'
+#' @examples
+#' if (interactive()) {
+#'   load(system.file('extdata/tiny_rse.Rdata', package = 'geyser'))
+#'   geyser(tiny_rse, "Test RSE")
+#' }
 geyser <- function(rse = NULL, 
                    app_name = "geyser",
                    primary_color = "#3A5836",
                    secondary_color = "#d5673e",
                    computer_data_dir = NULL) {
+  
+  shiny::addResourcePath(
+    prefix = "geyser-assets", 
+    directoryPath = system.file("www", package = "geyser")
+  )
   
   # Set max file upload size to 1GB
   options(shiny.maxRequestSize = 1000*1024^2)
@@ -57,7 +69,10 @@ geyser <- function(rse = NULL,
   
   ui <- page_navbar(
     id = "main_nav",
-    title = app_name,
+    title = span(
+      tags$img(src = "geyser-assets/logo.20260123.png", height = "40px", style = "margin-right: 10px;"),
+      app_name
+    ),
     theme = theme_ui(primary_color = primary_color, 
                      secondary_color = secondary_color),
     header = tagList(
@@ -298,7 +313,7 @@ geyser <- function(rse = NULL,
                                    checkboxInput("col_clust", label = "Cluster Columns", value = TRUE),
                                    checkboxInput("row_clust", label = "Cluster Rows", value = TRUE),
                                    radioButtons("heatmap_axis", label = "Assign Row Axis: ", choices = c("Feature", "Sample"), selected = "Feature", inline = TRUE ),
-                                   checkboxInput("collapse_samples", label = "Collapse Samples (mean)", value = FALSE)),
+                                   checkboxInput("collapse_samples", label = "Collapse Samples (mean)", value = TRUE)),
                     actionButton('hm_plot_button','Draw Heatmap'),
                     plotOutput("hm_plot",height = '100%')
           )
@@ -438,7 +453,7 @@ geyser <- function(rse = NULL,
       rse <- rv$rse_object
       req(rse)
       active_groupings <- input$groupings
-      filtered_cd <- colData(rse) %>% as.data.frame()
+      filtered_cd <- colData(rse) %>% as.data.frame(check.names = FALSE)
       any_filter_active <- FALSE
       for (g in active_groupings) {
         selected_values <- input[[paste0("dynamic_filter_", g)]]
@@ -507,7 +522,7 @@ geyser <- function(rse = NULL,
     
     output$table <- DT::renderDataTable({
       req(rse_filtered_by_group())
-      colData(rse_filtered_by_group()) %>% data.frame() %>% rownames_to_column('rse_sample_id') %>% 
+      colData(rse_filtered_by_group()) %>% data.frame(check.names = FALSE) %>% rownames_to_column('rse_sample_id') %>% 
         select('rse_sample_id', any_of(input$groupings)) %>%
         DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 15, dom = 'tp'), filter = list(position = 'top', clear = FALSE))
     }, server = TRUE)
@@ -520,7 +535,7 @@ geyser <- function(rse = NULL,
     
     output$table_full <- DT::renderDataTable({
       req(rv$rse_object)
-      colData(rv$rse_object) %>% data.frame() %>% rownames_to_column('rse_sample_id') %>% 
+      colData(rv$rse_object) %>% data.frame(check.names = FALSE) %>% rownames_to_column('rse_sample_id') %>% 
         DT::datatable(rownames= FALSE, options = list(autoWidth = TRUE, pageLength = 25), filter = list(position = 'top', clear = FALSE), selection = 'none')
     }, server = TRUE)
     
