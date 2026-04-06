@@ -1,9 +1,10 @@
-# geyser 1.00.4
+# geyser 1.3.5
 
 * Add check.names = FALSE to all data.frame() calls to better handle special characters. 
 * The heatmap view defaults to mean grouping by the user selected metadata values
+* Fix bug in group filtering logic
 
-# geyser 1.00.3
+# geyser 1.3.4
 
 * New config capability to pre-select plotting options (e.g. genes, assay slot, sample groupings). 
 Can also output a configuration file based on the current customization. 
@@ -13,13 +14,13 @@ Can also output a configuration file based on the current customization.
 * Heatmap can now optionally flip axes and can collapse individual samples to the group level
 
 
-# geyser 1.00.2
+# geyser 1.3.3
 
 * Geyser looks for information in the `$metadata` slot to print on the loading screen. 
 * Faceting adds in user-selected rowData info (instead of being hardcoded to rowname). 
 * Fixed bug in point labels where it was not adjusting to the y-axis jitter.
 
-# geyser 1.00.1
+# geyser 1.3.1
 
 Geyser now has the ability to load an SCE from an .rds file 
 (when called with `geyser()`, no arguments). Geyser now has color palettes (pals and ggplot2), 
@@ -27,6 +28,10 @@ custom plot height, optional points plotting, metadata-group based filtering,
 and optional point text labeling. Point spread logic was changed from geom_beeswarm
 to geom_quasirandom as I found the former had some odd behavior with point spread
 in larger sample datasets. Geyser now has a persistent file loader.
+
+# geyserr 1.3.0
+
+BioConductor release
 
 # geyser 0.99.8
 
