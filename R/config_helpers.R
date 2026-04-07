@@ -58,6 +58,14 @@ apply_config <- function(config, session, rv) {
       rv$pending_sample_filter <- config$sample_filter_rows
     }
   }
+  
+  # checkbox controls
+  if (!is.null(config$expression_scale)) {
+    shiny::updateCheckboxInput(session, "expression_scale", value = config$expression_scale)
+  }
+  if (!is.null(config$show_points)) {
+    shiny::updateCheckboxInput(session, "show_points", value = config$show_points)
+  }
 }
 
 #' Extract geyser config from SummarizedExperiment metadata

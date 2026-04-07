@@ -60,6 +60,45 @@ rse <- SummarizedExperiment(assays = list(counts = your_count_matrix), colData =
 colnames(rse) <- your_metadata$sample_id
 ```
 
+## Auto Config
+
+You can embed a default configuration directly into your SummarizedExperiment (or SingleCellExperiment) object. 
+When users load the .rds file into the geyser app, the tool will automatically read these settings, populate the dropdowns, and pre-filter the data.
+
+```
+# 1. Define all available configuration settings
+# (all are optional)
+default_geyser_config <- list(
+  
+  # --- Core Plotting Parameters ---
+  groupings = c("disease", "treatment"),  # colData column(s) for the x-axis
+  feature_col = "row names",              # "row names" or a specific rowData column
+  features = c("TYRP1", "OPN1LW"),        # Default features (genes) to plot
+  slot = "counts",                        # Assay to plot (e.g., "counts", "logcounts")
+  
+  # --- Aesthetics ---
+  color_by = "tissue",                    # colData column to color points by
+  color_palette = "okabe",                # Color palette (e.g., "okabe", "polychrome", "Set1")
+  label_by = "sample_id",                 # colData column to label specific points
+  
+  # --- Custom Toggles  ---
+  expression_scale = FALSE,               # Set to FALSE to uncheck 'log2(expression)'
+  show_points = FALSE,                    # Set to FALSE to uncheck 'Plot individual points'
+  
+  # --- Pre-applied Data Filters (Optional) ---
+  group_filters = list(                   # Pre-filter specific colData groups
+    disease = c("AMD", "Normal") 
+  ),
+  sample_filter_rows = c(1, 2, 3, 4, 5)   # Pre-select specific row indices in the data table
+)
+
+# 2. Embed the configuration list into the metadata
+S4Vectors::metadata(rse)$geyser_config <- default_geyser_config
+
+# 3. Save the ready-to-use object
+saveRDS(rse, "geyser_ready_dataset.rds")
+```
+
 ## Related tools
 
 The theme between these tools is that they do A LOT OF STUFF. **geyser** just does one thing - shows gene expression across your samples. Which, effectively, means less energy spent trying to figure out how to get started.
