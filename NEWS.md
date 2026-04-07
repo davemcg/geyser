@@ -1,3 +1,7 @@
+# geyser 1.3.7
+
+Fixed bug in x and y axis labeling (they were swapped)
+
 # geyser 1.3.6
 
 Add in checkbox controls in the config options.
@@ -18,7 +22,6 @@ Can also output a configuration file based on the current customization.
 * Plotting options can also be loaded in via the via `metadata(rse)$geyser_config` as a list
 
 * Heatmap can now optionally flip axes and can collapse individual samples to the group level
-
 
 # geyser 1.3.3
 

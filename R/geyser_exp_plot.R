@@ -157,8 +157,8 @@
   # Add remaining plot elements 
   p <- p +
     labs(caption = paste0("geyser\n",data_source_name)) +
-    xlab(paste0(groupings, collapse = ' | ')) +
-    ylab(ylab_text) +
+    ylab(paste0(groupings, collapse = ' | ')) +
+    xlab(ylab_text) +
     theme_linedraw(base_size = 16) +
     facet_wrap(~facet_label, ncol = 1)
   
