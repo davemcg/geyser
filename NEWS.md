@@ -1,3 +1,9 @@
+# geyser 1.3.6
+
+Add in checkbox controls in the config options.
+
+Add some text to the readme explaining what fields are available to auto configure within the SummarizedExperiment object
+
 # geyser 1.3.5
 
 * Add check.names = FALSE to all data.frame() calls to better handle special characters. 
