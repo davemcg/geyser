@@ -1,3 +1,7 @@
+# geyser 1.5.1
+
+Document pandoc dependency. Increment version to match (?) bioconductor.
+
 # geyser 1.3.7
 
 Fixed bug in x and y axis labeling (they were swapped)
