@@ -1,3 +1,7 @@
+# geyser 1.5.2
+
+Updated the assay pull to first coerce to matrix to handle hdf5 backed SummarizedExperiment input.
+
 # geyser 1.5.1
 
 Document pandoc dependency. Increment version to match (?) bioconductor.

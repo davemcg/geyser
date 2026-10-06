@@ -71,6 +71,7 @@
   
   # Pull feature counts 
   pdata <- assay((rse), input$slot)[feature_logical, , drop = FALSE] %>%
+    as.matrix() %>% 
     data.frame(check.names=FALSE) %>% 
     rownames_to_column('rse_row_id') %>% 
     pivot_longer(-rse_row_id, values_to = 'counts', names_to = 'sample_unique_id')
